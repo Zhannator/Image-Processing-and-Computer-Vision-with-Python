@@ -12,20 +12,22 @@ import math
 # Matlab documentation for houghpeaks():
 # http://www.mathworks.com/help/images/ref/houghpeaks.html
 ################################################################
-def hough_peaks(H, numpeaks = 6, nHoodSize = [1, 1], threshold = 0, theta = np.arange(-90, 90, 1, 'double')): # (H, varargin)
+def hough_peaks(H, numpeaks = 6, nHoodSize = [1, 1], threshold = 0.5, theta = np.arange(-90, 90, 1, 'double')): # (H, varargin)
 	
 	# Default threshold
-	if threshold == 0:
-		max_H_row, max_H_column = np.unravel_index(np.argmax(H), H.shape)
-		threshold = 0.5*H[max_H_row][max_H_column]
-		#print threshold
+	max_H_row, max_H_column = np.unravel_index(np.argmax(H), H.shape)
+	threshold = threshold*H[max_H_row][max_H_column]
+		
+	#print threshold
 	
 	# Default nHoodSize
 	height, width = H.shape
 	if nHoodSize == [1, 1]:
 		nHoodSize = [np.round(height/50), np.round(width/50)]
 	nHoodSizeHalf = [(nHoodSize[0]/2) + 1, (nHoodSize[1]/2) + 1]
+	
 	#print nHoodSize
+	
 	# Initialize peak indices numpeaks x 2 array
 	Q = []
 
