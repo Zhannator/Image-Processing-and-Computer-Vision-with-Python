@@ -14,7 +14,8 @@ from find_circles import find_circles
 
 def main():
 	if 1 == 0:
-        # ---------------------------------------------------------- 1 ----------------------------------------------------------
+	
+		# ---------------------------------------------------------- 1 ----------------------------------------------------------
 
 		# 1-A: Canny Edge Detection
 		print "--------------1-A--------------"
@@ -32,9 +33,9 @@ def main():
 				plt.title('Edge Image'), plt.xticks([]), plt.yticks([])
 				plt.show()
 
-        # ---------------------------------------------------------- 2 ----------------------------------------------------------
+		# ---------------------------------------------------------- 2 ----------------------------------------------------------
 
-                
+				
 		# 2-A: Hough Lines Accumulator
 		print "--------------2-A--------------"
 		H, theta, rho = hough_lines_acc(img_edges) #{H, theta, rho}
@@ -83,8 +84,8 @@ def main():
 				plt.title('Lines Image'), plt.xticks([]), plt.yticks([])
 				plt.show()	
 
-        # ---------------------------------------------------------- 3 ----------------------------------------------------------
-       
+		# ---------------------------------------------------------- 3 ----------------------------------------------------------
+	   
 		# 3-A: Gaussian Blur
 		print "--------------3-A--------------"
 		img_noise = cv2.imread('input/ps1-input0-noise.png', 0)
@@ -140,7 +141,7 @@ def main():
 				plt.subplot(122),plt.imshow(hough_lines, cmap = 'gray')
 				plt.title('Hough Image'), plt.xticks([]), plt.yticks([])
 				plt.show()
-	
+				
 		# ---------------------------------------------------------- 4 ----------------------------------------------------------
 		
 		# 4-A: Blur monochrome image that contains coins and pens
@@ -163,7 +164,7 @@ def main():
 				
 		# 4-B: Find edges in smoothed monochrome image that contains coins and pens
 		print "--------------4-B--------------"
-		img_circles_and_lines_blur_edges = cv2.Canny(img_circles_and_lines_blur, 100, 200)
+		img_circles_and_lines_blur_edges = cv2.Canny(img_circles_and_lines_blur, 300, 400)
 		cv2.imwrite('output/ps1-4-b-1.png', img_circles_and_lines_blur_edges)
 		if (len(sys.argv) > 1):
 			if (sys.argv[1] == "-plot"):
@@ -179,13 +180,15 @@ def main():
 		# Normalize hough_lines_acc_output['H'] 
 		hough_normalized = H.astype('uint8')
 		num_of_peaks = 10
-		peaks = hough_peaks(hough_normalized, num_of_peaks)
+		peaks = hough_peaks(hough_normalized, num_of_peaks, [30, 30], 60)
+		#print "Peaks " + str(peaks)
 		# Highlight peak locations on accumulator array
 		for i in range(len(peaks)):
 			cv2.circle(hough_normalized, (peaks[i][1], peaks[i][0]), 10, (255, 255, 255), thickness=2, lineType=8) # Draw a circle using center coordinates and radius
 		# Save hough image with highlighted circles
 		cv2.imwrite('output/ps1-4-c-1.png', hough_normalized)
 		# Draw lines
+		cv2.imwrite('output/ps1-4-c-2.png', img_circles_and_lines)
 		hough_lines_draw(img_circles_and_lines, 'ps1-4-c-2.png', peaks, rho, theta)
 		# Optional plot/show
 		if (len(sys.argv) > 1):
@@ -209,19 +212,20 @@ def main():
 		H = hough_circles_acc(img_circles_and_lines_blur_edges, radius)
 		# Find circle centers
 		num_of_circles = 10
-		centers = hough_peaks(H, num_of_circles, [30, 30]);
+		centers = hough_peaks(H, num_of_circles, [30, 30], 85);
 		# Draw circles
 		original_plus_circles  = img_circles_and_lines.copy()
+		img_rgb = cv2.cvtColor(original_plus_circles,cv2.COLOR_GRAY2RGB)
 		for i in range(len(centers)):
-			cv2.circle(original_plus_circles, (centers[i][1], centers[i][0]), radius, (255, 255, 255), thickness=2, lineType=8) # Draw a circle using center coordinates and radius
+			cv2.circle(img_rgb, (centers[i][1], centers[i][0]), radius, (255, 0, 0), thickness=2, lineType=8) # Draw a circle using center coordinates and radius
 		# Save hough image with highlighted circles
-		cv2.imwrite('output/ps1-5-a-3.png', original_plus_circles)
+		cv2.imwrite('output/ps1-5-a-3.png', img_rgb)
 			# Optional plot/show
 		if (len(sys.argv) > 1):
 			if (sys.argv[1] == "-plot"):
 				plt.subplot(121),plt.imshow(H, cmap = 'gray')
 				plt.title('Hough Image'), plt.xticks([]), plt.yticks([])
-				plt.subplot(122),plt.imshow(original_plus_circles, cmap = 'gray')
+				plt.subplot(122),plt.imshow(img_rgb, cmap = 'gray')
 				plt.title('Original with Some Highlighted Circles'), plt.xticks([]), plt.yticks([])
 				plt.show()
 			
@@ -232,39 +236,52 @@ def main():
 		centers, radii = find_circles(img_circles_and_lines_blur_edges, [min_radius, max_radius])
 		# Draw circles
 		original_plus_circles  = img_circles_and_lines.copy()
+		img_rgb = cv2.cvtColor(original_plus_circles,cv2.COLOR_GRAY2RGB)
 		for i in range(len(centers)):
-			cv2.circle(original_plus_circles, (centers[i][1], centers[i][0]), radii[i], (255, 255, 255), thickness=2, lineType=8) # Draw a circle using center coordinates and radius
+			cv2.circle(img_rgb, (centers[i][1], centers[i][0]), radii[i], (255, 0, 0), thickness=2, lineType=8) # Draw a circle using center coordinates and radius
 		# Save hough image with highlighted circles
-		cv2.imwrite('output/ps1-5-b-1.png', original_plus_circles)
+		cv2.imwrite('output/ps1-5-b-1.png', img_rgb)
 		# Optional plot/show
 		if (len(sys.argv) > 1):
 			if (sys.argv[1] == "-plot"):
 				plt.subplot(121),plt.imshow(img_circles_and_lines, cmap = 'gray')
 				plt.title('Original Image'), plt.xticks([]), plt.yticks([])
-				plt.subplot(122),plt.imshow(original_plus_circles, cmap = 'gray')
+				plt.subplot(122),plt.imshow(img_rgb, cmap = 'gray')
 				plt.title('Original with All Highlighted Circles'), plt.xticks([]), plt.yticks([])
 				plt.show()	
-				
-	# ---------------------------------------------------------- 6 ----------------------------------------------------------
 	
-	# 6-A: Line finder on realistic images
-	print "--------------6-A--------------"
-	# Read in an image
-	img = cv2.imread('input/ps1-input2.png', cv2.IMREAD_GRAYSCALE)
-	# Apply Gaussian Blur
-	img_blur = cv2.GaussianBlur(img.copy(), (5, 5), 30)
-	img_blur = img_blur.astype('uint8')
-	img_blur_edges = cv2.Canny(img_blur, 100, 200)
-	H, theta, rho = hough_lines_acc(img_blur_edges) #{H, theta, rho}
-	# Normalize hough_lines_acc_output['H'] 
-	hough_normalized = H.astype('uint8')
-	# Save image with Hough lines drawn on them
-	cv2.imwrite('output/x.png', hough_normalized)
-	num_of_peaks = 10
-	peaks = hough_peaks(H, num_of_peaks, [3, 3], 0.05);
-	# Draw lines
-	hough_lines_draw(img_blur, 'ps1-6-a-1.png', peaks, rho, theta)
+	if 1 == 1:
+		# ---------------------------------------------------------- 6 ----------------------------------------------------------
 	
+		# 6-A: Line finder on realistic images
+		print "--------------6-A--------------"
+		# Read in an image
+		img = cv2.imread('input/ps1-input2.png', cv2.IMREAD_GRAYSCALE)
+		# Apply Gaussian Blur
+		img_blur = cv2.GaussianBlur(img.copy(), (3, 3), 3)
+		img_blur = img_blur.astype('uint8')
+		
+		# Save image
+		cv2.imwrite('output/x.png', img_blur)
+		
+		img_blur_edges = cv2.Canny(img_blur, 60, 220)
+		
+		# Save image
+		cv2.imwrite('output/y.png', img_blur_edges)
+		
+		H, theta, rho = hough_lines_acc(img_blur_edges) #{H, theta, rho}
+		# Normalize hough_lines_acc_output['H'] 
+		hough_normalized = H.astype('uint8')
+		
+		# Save image
+		cv2.imwrite('output/z.png', hough_normalized)
+		
+		num_of_peaks = 10
+		peaks = hough_peaks(H, num_of_peaks, [30, 30], 70);
+		# Draw lines
+		hough_lines_draw(img_blur, 'ps1-6-a-1.png', peaks, rho, theta)
+	
+		# 6:B: Attempt to find lines that are just pen boundaries
 			
 if __name__ == "__main__":
 	main()

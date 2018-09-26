@@ -14,14 +14,19 @@ import math
 ################################################################
 def hough_lines_draw(img, outfile, peaks, rho, theta):
 	height, width = img.shape
+	# Calculate maximum rho
+	rho_max = np.round(math.sqrt(math.pow(height, 2) + math.pow(width, 2)))
+	# Maximum theta
+	theta_max = 90
+	
 	# print "Height and Width: " + str(height) + " " + str(width)
 	img_rgb = cv2.cvtColor(img,cv2.COLOR_GRAY2RGB)
 	for i in range(len(peaks)):
 		# Get row index of peak and calculate intercepts
-		R = rho[peaks[i][0]] # 0
-		T = theta[peaks[i][1]]
+		R = rho[peaks[i][0]] # (- rho_max + 1)
+		T = theta[peaks[i][1]] # (- theta_max)
 		
-		# print "R and T " + str(i) + ": " + str(R) + " " + str(T)
+		#print "R and T " + str(i) + ": " + str(R) + " " + str(T)
 		R1 = 0
 		C1 = 0
 		R2 = 0
@@ -40,8 +45,8 @@ def hough_lines_draw(img, outfile, peaks, rho, theta):
 			R2 = (np.round(R)).astype('int64') # R1 = R2
 			C2 = width - 1
 		else:
-			m = (-1) * np.cos(T)/np.sin(T)
-			b = R/np.sin(T)
+			m = (-1) * np.cos(math.radians(T))/np.sin(math.radians(T))
+			b = R/np.sin(math.radians(T))
 			
 			# print "m: " + str(m)
 			# print "b: " + str(b)
@@ -52,7 +57,7 @@ def hough_lines_draw(img, outfile, peaks, rho, theta):
 			# Calculate 4 points
 			points = [[0, (-1) * (b / m)], [b, 0], [height - 1, ((height - 1 - b) / m)], [(m * (width - 1) + b), width - 1]]
 			
-			print points
+			#print points
 			
 			# 4 Intercept options
 			if ((points[0][1] < width) & (points[0][1] >= 0)): # (R, C) = (0, val<=w-1)
@@ -84,10 +89,10 @@ def hough_lines_draw(img, outfile, peaks, rho, theta):
 			R2 = points[point_2_id][0]
 			C2 = points[point_2_id][1]
 			
-		print "Start " + str(i) + ": " + str(R1) + " " + str(C1)
-		print "End " + str(i) + ": " + str(R2) + " " + str(C2)
-		print "------------------------------------------------------------------"
+		#print "Start " + str(i) + ": " + str(R1) + " " + str(C1)
+		#print "End " + str(i) + ": " + str(R2) + " " + str(C2)
+		#print "------------------------------------------------------------------"
 		
-		cv2.line(img_rgb,(R1, C1),(R2, C2), (255, 0, 0), 2)
+		cv2.line(img_rgb,(C1, R1),(C2, R2), (255, 0, 0), 2)
 
 	cv2.imwrite('output/' + outfile, img_rgb)

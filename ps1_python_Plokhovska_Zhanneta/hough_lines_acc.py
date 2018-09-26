@@ -33,10 +33,10 @@ def hough_lines_acc (BW, thetaResolution = 1, rhoResolution = 1): # (BW, varargi
 	# For each edge point in BW[row, column] check all possible lines that could go through it
 	for row in range(height):
 		for column in range(width):
-			if (BW[row][column] > 1):
+			if (BW[row][column] > 0):
 				for T in theta:
 					# Calculate rho value for [row, column] with theta = T
-					d = np.round(row * math.cos(math.radians(T)) + column * math.sin(math.radians(T)))
+					d = np.round(column * math.cos(math.radians(T)) + row * math.sin(math.radians(T)))
 					d = d + rho_max - 1
 					# Round rho to rhoResolution
 					d_remainder = d % rhoResolution
@@ -47,6 +47,7 @@ def hough_lines_acc (BW, thetaResolution = 1, rhoResolution = 1): # (BW, varargi
 					# Account for rhoResolution != 1
 					d = d / rhoResolution
 					d = d.astype('uint64')
+					
 					# Round theta to rhoResolution
 					T_index = (T + theta_max).astype('intc')
 					T_index_remainder = T_index % thetaResolution
@@ -57,8 +58,9 @@ def hough_lines_acc (BW, thetaResolution = 1, rhoResolution = 1): # (BW, varargi
 					# Account for thetaResolution != 1
 					T_index = T_index / thetaResolution
 					T_index = T_index.astype('uint64')
+					
 					# Update H
 					H[d][T_index] = H[d][T_index] + 1
-
+	
 	# Return [H, theta, rho]
 	return H, theta, rho # {'H' : H, 'theta' : theta, 'rho' : rho}

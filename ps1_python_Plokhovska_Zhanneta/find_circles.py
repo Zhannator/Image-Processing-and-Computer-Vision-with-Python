@@ -23,7 +23,7 @@ def find_circles(BW, radius_range):
 		H = hough_circles_acc(BW, radius)
 		# Find circle centers
 		num_of_circles = 5
-		current_centers = hough_peaks(H, num_of_circles, [30, 30], 120)
+		current_centers = hough_peaks(H, num_of_circles, [30, 30], 100)
 		
 		for i in range(len(current_centers)):
 			centers.append(current_centers[i])
