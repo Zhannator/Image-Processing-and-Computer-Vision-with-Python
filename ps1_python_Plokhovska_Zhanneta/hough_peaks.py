@@ -18,7 +18,7 @@ def hough_peaks(H, numpeaks = 6, nHoodSize = [1, 1], threshold = 0, theta = np.a
 	max_H_row, max_H_column = np.unravel_index(np.argmax(H), H.shape)
 	if threshold == 0:
 		threshold = 0.5 * H[max_H_row][max_H_column]
-	print "MAX: " + str(H[max_H_row][max_H_column])
+	# print "MAX: " + str(H[max_H_row][max_H_column])
 	
 	#print threshold
 	

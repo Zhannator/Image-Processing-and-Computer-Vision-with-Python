@@ -260,15 +260,33 @@ def main():
 		# Apply Gaussian Blur
 		img_blur = cv2.GaussianBlur(img.copy(), (3, 3), 3)
 		img_blur = img_blur.astype('uint8')
-		
-		# Save image
-		cv2.imwrite('output/x.png', img_blur)
-		
 		img_blur_edges = cv2.Canny(img_blur, 60, 220)
+		H, theta, rho = hough_lines_acc(img_blur_edges) #{H, theta, rho}
+		# Normalize hough_lines_acc_output['H'] 
+		hough_normalized = H.astype('uint8')
+		num_of_peaks = 10
+		peaks = hough_peaks(H, num_of_peaks, [30, 30], 70);
+		# Draw lines
+		hough_lines_draw(img_blur, 'ps1-6-a-1.png', peaks, rho, theta)
+		# Optional plot/show
+		if (len(sys.argv) > 1):
+			if (sys.argv[1] == "-plot"):
+				img_pens = cv2.imread('output/ps1-6-a-1.png', cv2.IMREAD_GRAYSCALE)
+				plt.subplot(121),plt.imshow(img, cmap = 'gray')
+				plt.title('Original Busy Image'), plt.xticks([]), plt.yticks([])
+				plt.subplot(122),plt.imshow(img_pens, cmap = 'gray')
+				plt.title('Busy Image with Highlighted Pens'), plt.xticks([]), plt.yticks([])
+				plt.show()	
+	
+		# 6-C: Attempt to find lines that are just pen boundaries
+		print "--------------6-C--------------"
+		# Read in an image
+		img = cv2.imread('input/ps1-input2.png', cv2.IMREAD_GRAYSCALE)
+		# Apply Gaussian Blur
+		img_blur = cv2.GaussianBlur(img.copy(), (5, 5), 5)
+		img_blur = img_blur.astype('uint8')
 		
-		# Save image
-		cv2.imwrite('output/y.png', img_blur_edges)
-		
+		img_blur_edges = cv2.Canny(img_blur, 100, 200)
 		H, theta, rho = hough_lines_acc(img_blur_edges) #{H, theta, rho}
 		# Normalize hough_lines_acc_output['H'] 
 		hough_normalized = H.astype('uint8')
@@ -277,11 +295,85 @@ def main():
 		cv2.imwrite('output/z.png', hough_normalized)
 		
 		num_of_peaks = 10
+		peaks = hough_peaks(H, num_of_peaks, [30, 30], 120);
+		# Draw lines
+		hough_lines_draw(img_blur, 'ps1-6-c-1.png', peaks, rho, theta)
+		# Optional plot/show
+		if (len(sys.argv) > 1):
+			if (sys.argv[1] == "-plot"):
+				img_pens = cv2.imread('output/ps1-6-c-1.png', cv2.IMREAD_GRAYSCALE)
+				plt.subplot(121),plt.imshow(img, cmap = 'gray')
+				plt.title('Original Busy Image'), plt.xticks([]), plt.yticks([])
+				plt.subplot(122),plt.imshow(img_pens, cmap = 'gray')
+				plt.title('Busy Image with Highlighted Pens'), plt.xticks([]), plt.yticks([])
+				plt.show()	
+			
+		# 7-A: Finding Circles on the same clutter image
+		print "--------------7-A--------------"		
+		# Read in an image
+		img = cv2.imread('input/ps1-input2.png', cv2.IMREAD_GRAYSCALE)
+		# Apply Gaussian Blur
+		img_blur = cv2.GaussianBlur(img.copy(), (5, 5), 10)
+		img_blur = img_blur.astype('uint8')	
+		img_blur_edges = cv2.Canny(img_blur, 60, 220)
+		min_radius = 20
+		max_radius = 50
+		centers, radii = find_circles(img_blur_edges, [min_radius, max_radius])
+		# Draw circles
+		original_plus_circles  = img.copy()
+		img_rgb = cv2.cvtColor(original_plus_circles,cv2.COLOR_GRAY2RGB)
+		for i in range(len(centers)):
+			cv2.circle(img_rgb, (centers[i][1], centers[i][0]), radii[i], (255, 0, 0), thickness=2, lineType=8) # Draw a circle using center coordinates and radius
+		# Save hough image with highlighted circles
+		cv2.imwrite('output/ps1-7-a-1.png.png', img_rgb)
+		# Optional plot/show
+		if (len(sys.argv) > 1):
+			if (sys.argv[1] == "-plot"):
+				plt.subplot(121),plt.imshow(img, cmap = 'gray')
+				plt.title('Original Busy Image'), plt.xticks([]), plt.yticks([])
+				plt.subplot(122),plt.imshow(img_rgb, cmap = 'gray')
+				plt.title('Busy Image with Highlighted Circles'), plt.xticks([]), plt.yticks([])
+				plt.show()	
+	
+	if 1 == 0:
+		# 8-A: Line and circle finders on distorted image
+		print "--------------8-A--------------"	
+		# Read in an image
+		img = cv2.imread('input/ps1-input3.png', cv2.IMREAD_GRAYSCALE)
+		
+		# Apply Gaussian Blur
+		img_blur = cv2.GaussianBlur(img.copy(), (5, 5), 5)
+		img_blur = img_blur.astype('uint8')
+		img_blur_edges = cv2.Canny(img_blur, 80, 220)
+		# -- Lines --
+		H, theta, rho = hough_lines_acc(img_blur_edges) #{H, theta, rho}
+		# Normalize hough_lines_acc_output['H'] 
+		hough_normalized = H.astype('uint8')
+		num_of_peaks = 10
 		peaks = hough_peaks(H, num_of_peaks, [30, 30], 70);
 		# Draw lines
-		hough_lines_draw(img_blur, 'ps1-6-a-1.png', peaks, rho, theta)
-	
-		# 6:B: Attempt to find lines that are just pen boundaries
-			
+		hough_lines_draw(img_blur, 'ps1-8-a-1.png', peaks, rho, theta)
+		# Read in an image
+		img = cv2.imread('output/ps1-8-a-1.png', cv2.IMREAD_GRAYSCALE)
+		# -- Circles --
+		min_radius = 20
+		max_radius = 50
+		centers, radii = find_circles(img_blur_edges, [min_radius, max_radius])
+		# Draw circles
+		original_plus_circles  = cv2.imread('output/ps1-8-a-1.png', cv2.IMREAD_GRAYSCALE) # Read the image back in
+		img_rgb = cv2.cvtColor(original_plus_circles,cv2.COLOR_GRAY2RGB)
+		for i in range(len(centers)):
+			cv2.circle(img_rgb, (centers[i][1], centers[i][0]), radii[i], (255, 0, 0), thickness=2, lineType=8) # Draw a circle using center coordinates and radius
+		# Save hough image with highlighted circles
+		cv2.imwrite('output/ps1-8-a-1.png', img_rgb)
+		# Optional plot/show
+		if (len(sys.argv) > 1):
+			if (sys.argv[1] == "-plot"):
+				plt.subplot(121),plt.imshow(img, cmap = 'gray')
+				plt.title('Original Distorted Image'), plt.xticks([]), plt.yticks([])
+				plt.subplot(122),plt.imshow(img_rgb, cmap = 'gray')
+				plt.title('Distorted Image with Highlighted Circles/Lines'), plt.xticks([]), plt.yticks([])
+				plt.show()	
+		
 if __name__ == "__main__":
 	main()
