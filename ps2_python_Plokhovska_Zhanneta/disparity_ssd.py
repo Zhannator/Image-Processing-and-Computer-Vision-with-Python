@@ -24,8 +24,8 @@ def disparity_ssd(L, R):
 			for k in range(columns): # row stays same = i
 				# Calculate ssd for pixel using template from L
 				for row_t in displ_t:
+					L_R_row = i + row_t
 					for column_t in displ_t:
-						L_R_row = i + row_t
 						L_column = j + column_t
 						R_column = k + column_t
 						if ((L_R_row >= 0) & (L_R_row < rows) & (L_column >= 0) & (L_column < columns) & (R_column >= 0) & (R_column < columns)):
