@@ -11,7 +11,7 @@ from progressbar import ProgressBar
 def disparity_ssd(L, R):
 	pbar = ProgressBar()
 	rows, columns = L.shape # Assuming L and R are same size
-	displ_t = range(-3, 3, 1) # Displacement for template (size = 7x7)
+	displ_t = range(-4, 4, 1) # Displacement for template (size = 9x9)
 	
 	# Initialize disparity image - same size as L and R
 	D = np.zeros((rows, columns), np.uint8)
