@@ -1,3 +1,4 @@
+#Public libraries
 import numpy as np
 import math
 from progressbar import ProgressBar
@@ -30,6 +31,7 @@ def disparity_ncorr(L, R):
 					for column_t in displ_t:
 						L_column = j + column_t
 						R_column = k + column_t
+						# rtx
 						if ((L_R_row >= 0) & (L_R_row < rows) & (L_column >= 0) & (L_column < columns) & (R_column >= 0) & (R_column < columns)):
 							rtx[k] = rtx[k] + (L[L_R_row][L_column] * R[L_R_row][R_column])
 						# rxx

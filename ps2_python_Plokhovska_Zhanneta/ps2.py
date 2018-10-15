@@ -10,41 +10,44 @@ from disparity_ncorr import disparity_ncorr
 
 def main():
 	
-	## 1-a: Basic stereo algorithm on simple grayscale image
-	print "-----------------------1-A-----------------------"
-	# Read images
-	L = cv2.imread(os.path.join('input', 'pair0-L.png'), 0) * (1.0 / 255.0)  # grayscale, [0, 1]
-	R = cv2.imread(os.path.join('input', 'pair0-R.png'), 0) * (1.0 / 255.0)
-	rows, columns = L.shape
-	# Compute disparity (using method disparity_ssd defined in disparity_ssd.py)
-	# Save output images
-	# Note: They may need to be scaled/shifted before saving to show results properly
-	D_L = disparity_ssd(L, R)
-	#D_L = np.uint8(255 * (D_L - D_L.min()) / (D_L.max() - D_L.min()))
-	D_L = cv2.equalizeHist(D_L)
-	cv2.imwrite('output/ps2-1-a-1.png', D_L)
-	D_R = disparity_ssd(R, L)
-	#D_R = np.uint8(255 * (D_R - D_R.min()) / (D_R.max() - D_R.min()))
-	D_R = cv2.equalizeHist(D_R)
-	cv2.imwrite('output/ps2-1-a-2.png', D_R)
+	if 1 == 0:
+		## 1-a: Basic stereo algorithm on simple grayscale image
+		print "-----------------------1-A-----------------------"
+		# Read images
+		L = cv2.imread(os.path.join('input', 'pair0-L.png'), 0) * (1.0 / 255.0)  # grayscale, [0, 1]
+		R = cv2.imread(os.path.join('input', 'pair0-R.png'), 0) * (1.0 / 255.0)
+		rows, columns = L.shape
+		# Compute disparity (using method disparity_ssd defined in disparity_ssd.py)
+		# Save output images
+		# Note: They may need to be scaled/shifted before saving to show results properly
+		D_L = disparity_ssd(L, R)
+		#D_L = np.uint8(255 * (D_L - D_L.min()) / (D_L.max() - D_L.min()))
+		D_L = cv2.equalizeHist(D_L)
+		cv2.imwrite('output/ps2-1-a-1.png', D_L)
+		D_R = disparity_ssd(R, L)
+		#D_R = np.uint8(255 * (D_R - D_R.min()) / (D_R.max() - D_R.min()))
+		D_R = cv2.equalizeHist(D_R)
+		cv2.imwrite('output/ps2-1-a-2.png', D_R)
 
-	## 2-a: Basic stereo algorithm on real image
-	print "-----------------------2-A-----------------------"
+		## 2-a: Basic stereo algorithm on real image
+		print "-----------------------2-A-----------------------"
 	# Read images
 	L = cv2.imread('input/pair1-L.png', 0)
 	R = cv2.imread('input/pair1-R.png', 0)
 	rows, columns = L.shape
-	# Compute disparity (using method disparity_ssd defined in disparity_ssd.py)
-	# Save output images
-	# Note: They may need to be scaled/shifted before saving to show results properly
-	D_L = disparity_ssd(L, R)
-	#D_L = np.uint8(255 * (D_L - D_L.min()) / (D_L.max() - D_L.min()))
-	D_L = cv2.equalizeHist(D_L)
-	cv2.imwrite('output/ps2-2-a-1.png', D_L)
-	D_R = disparity_ssd(R, L)
-	#D_R = np.uint8(255 * (D_R - D_R.min()) / (D_R.max() - D_R.min()))
-	D_R = cv2.equalizeHist(D_R)
-	cv2.imwrite('output/ps2-2-a-2.png', D_R)
+	
+	if 1 == 0:
+		# Compute disparity (using method disparity_ssd defined in disparity_ssd.py)
+		# Save output images
+		# Note: They may need to be scaled/shifted before saving to show results properly
+		D_L = disparity_ssd(L, R)
+		#D_L = np.uint8(255 * (D_L - D_L.min()) / (D_L.max() - D_L.min()))
+		D_L = cv2.equalizeHist(D_L)
+		cv2.imwrite('output/ps2-2-a-1.png', D_L)
+		D_R = disparity_ssd(R, L)
+		#D_R = np.uint8(255 * (D_R - D_R.min()) / (D_R.max() - D_R.min()))
+		D_R = cv2.equalizeHist(D_R)
+		cv2.imwrite('output/ps2-2-a-2.png', D_R)
 
 	## 3-a: Basic stereo algorithm on real image with added noise
 	print "-----------------------3-A-----------------------"
@@ -53,13 +56,17 @@ def main():
 	sigma = 15
 	noise = np.random.normal(mu, sigma, rows*columns)
 	L_noise = noise.reshape(rows, columns) + L
-	# Compute disparity (using method disparity_ssd defined in disparity_ssd.py)
-	# Save output images
-	# Note: They may need to be scaled/shifted before saving to show results properly
-	D_L = disparity_ssd(L_noise, R)
-	#D_L = np.uint8(255 * (D_L - D_L.min()) / (D_L.max() - D_L.min()))
-	D_L = cv2.equalizeHist(D_L)
-	cv2.imwrite('output/ps2-3-a-1.png', D_L)
+	
+	if 1 == 0:
+		# Compute disparity (using method disparity_ssd defined in disparity_ssd.py)
+		# Save output images
+		# Note: They may need to be scaled/shifted before saving to show results properly
+		D_L = disparity_ssd(L_noise, R)
+		#D_L = np.uint8(255 * (D_L - D_L.min()) / (D_L.max() - D_L.min()))
+		D_L = cv2.equalizeHist(D_L)
+		cv2.imwrite('output/ps2-3-a-1.png', D_L)
+	
+	
 	D_R = disparity_ssd(R, L_noise)
 	#D_R = np.uint8(255 * (D_R - D_R.min()) / (D_R.max() - D_R.min()))
 	D_R = cv2.equalizeHist(D_R)
