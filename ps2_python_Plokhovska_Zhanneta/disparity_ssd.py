@@ -33,5 +33,5 @@ def disparity_ssd(L, R):
 							pixel_ssd[k] = pixel_ssd[k] + math.pow(L[L_R_row][L_column] - R[L_R_row][R_column], 2)
 			# Pick best match
 			pixel_index_min_ssd = pixel_ssd.index(min(pixel_ssd))
-			D[i][pixel_index_min_ssd] = min(pixel_ssd)
+			D[i][j] = pixel_index_min_ssd - j
 	return D

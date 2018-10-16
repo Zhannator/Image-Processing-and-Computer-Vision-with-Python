@@ -43,7 +43,7 @@ def disparity_ncorr(L, R):
 				# Normalize
 				rtx[k] = rtx[k] / math.sqrt(rxx[k] * rtt[k])
 			# Pick best match
-			pixel_index_min_dot = rtx.index(max(rtx)) # Max value when pixels match
-			D[i][pixel_index_min_dot] = max(rtx)
+			pixel_index_max_dot = rtx.index(max(rtx)) # Max value when pixels match
+			D[i][j] = pixel_index_max_dot - j
 	
 	return D
