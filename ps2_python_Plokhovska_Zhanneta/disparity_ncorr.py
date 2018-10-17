@@ -20,9 +20,20 @@ def disparity_ncorr(L, R):
 	# For every pixel in image L
 	for i in pbar(range(rows)):
 		for j in range(columns):
+			# rtt
+			rtt = 0 # Help normalization
+			# Calculate dot for pixel using template from L
+			for row_t in displ_t:
+				L_row = i + row_t
+				for column_t in displ_t:
+					L_column = j + column_t
+					if ((L_row >= 0) & (L_row < rows) & (L_column >= 0) & (L_column < columns)):
+						rtt = rtt + (L[L_row][L_column] * L[L_row][L_column])
+				
 			rtx = [0] * columns # Store dot for every pixel on epipolar line
 			rxx = [0] * columns # Help normalization
-			rtt = [0] * columns # Help normalization
+			ptx = [0] * columns
+			
 			# For every pixel in epipolar line in R
 			for k in range(columns): # row stays same = i
 				# Calculate dot for pixel using template from L
@@ -37,13 +48,10 @@ def disparity_ncorr(L, R):
 						# rxx
 						if ((L_R_row >= 0) & (L_R_row < rows) & (R_column >= 0) & (R_column < columns)):
 							rxx[k] = rxx[k] + (R[L_R_row][R_column] * R[L_R_row][R_column])
-						# rtt
-						if ((L_R_row >= 0) & (L_R_row < rows) & (L_column >= 0) & (L_column < columns)):
-							rtt[k] = rtt[k] + (L[L_R_row][L_column] * L[L_R_row][L_column])
 				# Normalize
-				rtx[k] = rtx[k] / math.sqrt(rxx[k] * rtt[k])
+				ptx[k] = rtx[k] / math.sqrt(rxx[k] * rtt)
 			# Pick best match
-			pixel_index_max_dot = rtx.index(max(rtx)) # Max value when pixels match
+			pixel_index_max_dot = ptx.index(max(ptx)) # Max value when pixels match
 			D[i][j] = pixel_index_max_dot - j
 	
 	return D
