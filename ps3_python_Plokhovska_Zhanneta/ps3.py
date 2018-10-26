@@ -186,43 +186,40 @@ def main():
 	print "\nFundamental matrix F:"
 	print F
 	
-	# 2-C: Use F from 2A to estimate an epipolar line lb in image b corresponding to point pa in image a: lb = F*pa
-	print "\n-----------------------2-C-----------------------" 
-	lb = []
-	for pa in points_2d_a:
-		lb_temp = np.matmul(F, [[pa[0]], [pa[1]], [1]])
-		lb.append([lb_temp[0][0], lb_temp[1][0], lb_temp[2][0]])
-	la = []
-	for pb in points_2d_b:
-		la_temp = np.matmul(F, [[pb[0]], [pb[1]], [1]])
-		la.append([la_temp[0][0], la_temp[1][0], la_temp[2][0]])		
-	# Read in images 
-	A = cv2.imread('input/pic_a.jpg')
-	B = cv2.imread('input/pic_b.jpg')
-	rows, columns = A.shape[:-1]
-	#
-	Pul = ?????????????
-	Pbl = ?????????????
-	Pur = ?????????????
-	Pbr = ?????????????
-	ll = Pul * Pbl
-	lr = Pur * Pbr
-	
-	for li in la:
-		Pil = li * ll
-		Pir = li * lr
-		# Draw line (image, (column, row), (column, row), color, thickness)
-		cv2.line(A, (Pil[1], Pil[0]), (Pir[1], Pir[0]), (255, 0, 0), 5)
-	
-	cv2.imwrite('output/ps3-2-c-1.png', A)
-	
-	for li in lb:
-		Pil = li * ll
-		Pir = li * lr
-		# Draw line (image, (column, row), (column, row), color, thickness)
-		cv2.line(B, (Pil[1], Pil[0]), (Pir[1], Pir[0]), (255, 0, 0), 5)
-	
-	cv2.imwrite('output/ps3-2-c-2.png', B)
+	if 1 == 0:
+		# 2-C: Use F from 2A to estimate an epipolar line lb in image b corresponding to point pa in image a: lb = F*pa
+		print "\n-----------------------2-C-----------------------" 
+		lb = []
+		for pa in points_2d_a:
+			lb_temp = np.matmul(F, [[pa[0]], [pa[1]], [1]])
+			lb.append([lb_temp[0][0], lb_temp[1][0], lb_temp[2][0]])
+		la = []
+		for pb in points_2d_b:
+			la_temp = np.matmul(F, [[pb[0]], [pb[1]], [1]])
+			la.append([la_temp[0][0], la_temp[1][0], la_temp[2][0]])		
+		# Read in images 
+		A = cv2.imread('input/pic_a.jpg')
+		B = cv2.imread('input/pic_b.jpg')
+		rows, columns = A.shape[:-1]
+		#
+		Pul = [0, 0]
+		Pbl = [0, 0]
+		Pur = [0, 0]
+		Pbr = [0, 0]
+		ll = Pul * Pbl
+		lr = Pur * Pbr
+		for li in la:
+			Pil = li * ll
+			Pir = li * lr
+			# Draw line (image, (column, row), (column, row), color, thickness)
+			cv2.line(A, (Pil[1], Pil[0]), (Pir[1], Pir[0]), (255, 0, 0), 5)
+		cv2.imwrite('output/ps3-2-c-1.png', A)
+		for li in lb:
+			Pil = li * ll
+			Pir = li * lr
+			# Draw line (image, (column, row), (column, row), color, thickness)
+			cv2.line(B, (Pil[1], Pil[0]), (Pir[1], Pir[0]), (255, 0, 0), 5)
+		cv2.imwrite('output/ps3-2-c-2.png', B)
 	
 if __name__ == "__main__":
 	main()
