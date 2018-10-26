@@ -177,24 +177,26 @@ def main():
 	
 	# 2-B: Reduce rank of F to 2
 	print "\n-----------------------2-B-----------------------" 
-	
+	u, s, vt = np.linalg.svd(F_full_rank, full_matrices = False)
+	d = np.zeros((3,3))
+	d[0][0] = s[0]
+	d[1][1] = s[1]
+	F = np.matmul(u, d)
+	F = np.matmul(F, vt)
+	print "\nFundamental matrix F:"
+	print F
 	
 	# 2-C: Use F from 2A to estimate an epipolar line lb in image b corresponding to point pa in image a: lb = F*pa
 	print "\n-----------------------2-C-----------------------" 
-	
 	lb = []
 	for pa in points_2d_a:
 		lb_temp = np.matmul(F, [[pa[0]], [pa[1]], [1]])
 		lb.append([lb_temp[0][0], lb_temp[1][0], lb_temp[2][0]])
-
-	print lb
-		
 	la = []
 	for pb in points_2d_b:
 		la_temp = np.matmul(F, [[pb[0]], [pb[1]], [1]])
 		la.append([la_temp[0][0], la_temp[1][0], la_temp[2][0]])		
 	
-	print la
 	
 if __name__ == "__main__":
 	main()
