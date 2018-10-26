@@ -177,7 +177,7 @@ def main():
 	
 	# 2-B: Reduce rank of F to 2
 	print "\n-----------------------2-B-----------------------" 
-	u, s, vt = np.linalg.svd(F_full_rank, full_matrices = False)
+	u, s, vt = np.linalg.svd(F_full_rank, full_matrices = False) # singular value decomposition
 	d = np.zeros((3,3))
 	d[0][0] = s[0]
 	d[1][1] = s[1]
@@ -196,7 +196,36 @@ def main():
 	for pb in points_2d_b:
 		la_temp = np.matmul(F, [[pb[0]], [pb[1]], [1]])
 		la.append([la_temp[0][0], la_temp[1][0], la_temp[2][0]])		
+	# Read in images 
+	A = cv2.imread('input/pic_a.jpg')
+	B = cv2.imread('input/pic_b.jpg')
+	rows, columns = A.shape[:-1]
+	#
+	Pul = 
+	Pbl = 
+	Pur = 
+	Pbr = 
+	#ll = Pul * Pbl
+	#lr = Pur * Pbr
 	
+	print ll
+	print lr
+	
+	for li in la:
+		Pil = li * ll
+		Pir = li * lr
+		# Draw line (image, (column, row), (column, row), color, thickness)
+		cv2.line(A, (Pil[1], Pil[0]), (Pir[1], Pir[0]), (255, 0, 0), 5)
+	
+	cv2.imwrite('output/ps3-2-c-1.png', A)
+	
+	for li in lb:
+		Pil = li * ll
+		Pir = li * lr
+		# Draw line (image, (column, row), (column, row), color, thickness)
+		cv2.line(B, (Pil[1], Pil[0]), (Pir[1], Pir[0]), (255, 0, 0), 5)
+	
+	cv2.imwrite('output/ps3-2-c-2.png', B)
 	
 if __name__ == "__main__":
 	main()
