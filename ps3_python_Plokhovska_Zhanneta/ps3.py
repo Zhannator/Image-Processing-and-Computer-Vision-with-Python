@@ -4,6 +4,13 @@ import os
 import numpy as np
 import cv2
 
+def residual(points1, points2):
+	# You can do the comparison by checking the residual
+	# between the predicted location of each test point using your equation and the actual location
+	# given by the 2D input data. The residual is just the distance (square root of the sum of squared
+	# differences in u and v).
+	print residual here
+
 def svd(points_2d, points_3d):
 	# M* = eigenvector of AtA with smallest eigenvalue
 
@@ -16,9 +23,11 @@ def svd(points_2d, points_3d):
 		z = points_3d[i][2]
 		u = points_2d[i][0]
 		v = points_2d[i][1]
-		A.append([x, y, z, 1, 0, 0, 0, 0, u*x, u*y, u*z, u])
-		A.append([0, 0, 0, 0, x, y, z, 1, v*x, v*y, v*z, v])
-	At = np.transpose(A)	
+		A.append([x, y, z, 1, 0, 0, 0, 0, (-1)*u*x, (-1)*u*y, (-1)*u*z, (-1)*u])
+		A.append([0, 0, 0, 0, x, y, z, 1, (-1)*v*x, (-1)*v*y, (-1)*v*z, (-1)*v])
+	
+	At = np.transpose(A)
+	
 	AtA = np.matmul(At, A)
 	
 	# Find eigenvectors of AtA
@@ -49,16 +58,21 @@ def main():
 	point_3d_last = points_3d_norm[points_3d_norm_len - 1] # [x, y, z]
 	point_3d_last = np.append(point_3d_last, 1) # [x, y, z, 1]
 	point_3d_last.shape = (4, 1)
-	print "\nM: \n"
-	print M
-	print "\n3D Point: \n"
-	print point_3d_last
-	point_2d_calculated = np.matmul(M, point_3d_last)
-	point_2d_calculated = point_2d_calculated / point_2d_calculated[2]
-	point_2d_calculated = point_2d_calculated[0:2]
-	print "\n2D Point: \n"
+	point_2d_calculated = np.matmul(M, point_3d_last) # [d*x, d*y, d]
+	point_2d_calculated = point_2d_calculated / point_2d_calculated[2] # [x, y, 1]
+	point_2d_calculated = point_2d_calculated[0:2] # [x, y]
+	print "\n1-A) The < u, v > projection of the last point given your M matrix: \n"
 	print point_2d_calculated
-	
-	
+	# Predict all 2d points
+	predicted = []
+	for point_3d in points_3d_norm:
+		point_3d = np.append(point_3d, 1) # [x, y, z, 1]
+		point_3d.shape = (4, 1)
+		point_2d = np.matmul(M, point_3d) # [d*x, d*y, d]
+		point_2d = point_2d / point_2d[2] # [x, y, 1]
+		predicted.append([point_2d[0][0], point_2d[1][0]])
+	# Calculate residual
+		
+		
 if __name__ == "__main__":
 	main()
