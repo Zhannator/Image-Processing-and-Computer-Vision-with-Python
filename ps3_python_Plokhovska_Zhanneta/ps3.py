@@ -113,7 +113,6 @@ def main():
 	print "\nThe < u, v > projection of the last point given your M matrix:"
 	print point_2d_predicted
 	# Calculate residual
-	print points_2d_norm[points_len - 1]
 	residual = calculate_residual(points_2d_norm[points_len - 1], point_2d_predicted)
 	print "\nThe residual between that projected location and the actual one given:"
 	print residual
@@ -151,7 +150,6 @@ def main():
 	print "\nAverage residual for each trial of each k arranged in (3 x 10) matrix (first row for k = 8, second row for k = 12, third row for k = 16):"
 	print average_residuals
 	print "\nThe best M matrix (3 x 4):"
-	print residual_min
 	print M_min
 	# Predict all 2d points
 	#predicted = predict_3d_points(points_3d_norm, M) 
@@ -186,40 +184,44 @@ def main():
 	print "\nFundamental matrix F:"
 	print F
 	
-	if 1 == 0:
-		# 2-C: Use F from 2A to estimate an epipolar line lb in image b corresponding to point pa in image a: lb = F*pa
-		print "\n-----------------------2-C-----------------------" 
-		lb = []
-		for pa in points_2d_a:
-			lb_temp = np.matmul(F, [[pa[0]], [pa[1]], [1]])
-			lb.append([lb_temp[0][0], lb_temp[1][0], lb_temp[2][0]])
-		la = []
-		for pb in points_2d_b:
-			la_temp = np.matmul(F, [[pb[0]], [pb[1]], [1]])
-			la.append([la_temp[0][0], la_temp[1][0], la_temp[2][0]])		
-		# Read in images 
-		A = cv2.imread('input/pic_a.jpg')
-		B = cv2.imread('input/pic_b.jpg')
-		rows, columns = A.shape[:-1]
-		#
-		Pul = [0, 0]
-		Pbl = [0, 0]
-		Pur = [0, 0]
-		Pbr = [0, 0]
-		ll = Pul * Pbl
-		lr = Pur * Pbr
-		for li in la:
-			Pil = li * ll
-			Pir = li * lr
-			# Draw line (image, (column, row), (column, row), color, thickness)
-			cv2.line(A, (Pil[1], Pil[0]), (Pir[1], Pir[0]), (255, 0, 0), 5)
-		cv2.imwrite('output/ps3-2-c-1.png', A)
-		for li in lb:
-			Pil = li * ll
-			Pir = li * lr
-			# Draw line (image, (column, row), (column, row), color, thickness)
-			cv2.line(B, (Pil[1], Pil[0]), (Pir[1], Pir[0]), (255, 0, 0), 5)
-		cv2.imwrite('output/ps3-2-c-2.png', B)
+	# 2-C: Use F from 2A to estimate an epipolar line lb in image b corresponding to point pa in image a: lb = F*pa
+	print "\n-----------------------2-C-----------------------" 
+	F_transpose = np.transpose(F)
+	la = []
+	for pb in points_2d_b:
+		la_temp = np.matmul(F_transpose, [[pb[0]], [pb[1]], [1]])
+		la.append([la_temp[0][0], la_temp[1][0], la_temp[2][0]])
+	lb = []
+	for pa in points_2d_a:
+		lb_temp = np.matmul(F, [[pa[0]], [pa[1]], [1]])
+		lb.append([lb_temp[0][0], lb_temp[1][0], lb_temp[2][0]])
+	# Read in images 
+	A = cv2.imread('input/pic_a.jpg')
+	B = cv2.imread('input/pic_b.jpg')
+	rows, columns = A.shape[:-1]
+	# image boundaries
+	Pul = np.array([0, 0, 1])
+	Pbl = np.array([0, rows, 1])
+	Pur = np.array([columns, 0, 1])
+	Pbr = np.array([columns, rows, 1])
+	ll = np.cross(Pul, Pbl)
+	lr = np.cross(Pur, Pbr)
+	for li in la:
+		Pil = np.cross(li, ll)
+		Pil = [Pil[0] / Pil[2], Pil[1] / Pil[2]]
+		Pir = np.cross(li, lr)
+		Pir = [Pir[0] / Pir[2], Pir[1] / Pir[2]]
+		# Draw line (image, (column, row), (column, row), color, thickness)
+		cv2.line(A, (int(Pil[0]), int(Pil[1])), (int(Pir[0]), int(Pir[1])), (255, 0, 0), 2)
+	cv2.imwrite('output/ps3-2-c-1.png', A)
+	for li in lb:
+		Pil = np.cross(li, ll)
+		Pil = [Pil[0] / Pil[2], Pil[1] / Pil[2]]
+		Pir = np.cross(li, lr)
+		Pir = [Pir[0] / Pir[2], Pir[1] / Pir[2]]
+		# Draw line (image, (column, row), (column, row), color, thickness)
+		cv2.line(B, (int(Pil[0]), int(Pil[1])), (int(Pir[0]), int(Pir[1])), (255, 0, 0), 2)
+	cv2.imwrite('output/ps3-2-c-2.png', B)
 	
 if __name__ == "__main__":
 	main()
