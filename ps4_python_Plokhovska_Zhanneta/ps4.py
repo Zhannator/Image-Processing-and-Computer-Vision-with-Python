@@ -12,7 +12,7 @@ import random
 def compute_gradient(img):
 	# Sobel operator - approximation of derivative of Gaussian - (1/8) needed to get right gradient magnitude
 	kernel_x = np.array([[-1., 0., 1.], [-1., 0., 1.], [-1., 0., 1.]]) / 8
-	kernel_y = np.array([[1., 0., -1.], [1., 0., -1.], [1., 0., -1.]]) / 8
+	kernel_y = np.array([[-1., -1., -1.], [0., 0., 0.], [1., 1., 1.]]) / 8
 
 	rows, columns = img.shape
 	
