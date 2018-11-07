@@ -68,11 +68,14 @@ def compute_harris_image(Ix, Iy):
 def find_corner_points(harris_img, numcorners = 300, threshold = 0.5, nHoodSize = [1, 1]):
 	rows, columns = harris_img.shape
 	
+	# Optional to normalize
+	harris_img = normalize(harris_img)
+	
 	# Default threshold
 	max_row, max_column = np.unravel_index(np.argmax(harris_img), (rows, columns))
 	min_row, min_column = np.unravel_index(np.argmin(harris_img), (rows, columns))
 	threshold = threshold * (harris_img[max_row][max_column] + harris_img[min_row][min_column])
-	#print "\nThreshold: {} Max: {} Min: {}\n".format(threshold, harris_img[max_row][max_column], harris_img[min_row][min_column])
+	print "\nThreshold: {} Max: {} Min: {}\n".format(threshold, harris_img[max_row][max_column], harris_img[min_row][min_column])
 	
 	# Default nHoodSize
 	height, width = harris_img.shape
