@@ -65,7 +65,7 @@ def compute_harris_image(Ix, Iy):
 #################################################################################
 # Find corner points in Harris image using threshold and non-maximal suppression 
 #################################################################################
-def find_corner_points(harris_img, numcorners = 300, threshold = 0.5, nHoodSize = [1, 1]):
+def find_corner_points(harris_img, threshold = 0.5, nHoodSize = [1, 1]):
 	rows, columns = harris_img.shape
 	
 	# Optional to normalize
@@ -75,7 +75,7 @@ def find_corner_points(harris_img, numcorners = 300, threshold = 0.5, nHoodSize 
 	max_row, max_column = np.unravel_index(np.argmax(harris_img), (rows, columns))
 	min_row, min_column = np.unravel_index(np.argmin(harris_img), (rows, columns))
 	threshold = threshold * (harris_img[max_row][max_column] + harris_img[min_row][min_column])
-	print "\nThreshold: {} Max: {} Min: {}\n".format(threshold, harris_img[max_row][max_column], harris_img[min_row][min_column])
+	#print "\nThreshold: {} Max: {} Min: {}\n".format(threshold, harris_img[max_row][max_column], harris_img[min_row][min_column])
 	
 	# Default nHoodSize
 	height, width = harris_img.shape
@@ -88,8 +88,10 @@ def find_corner_points(harris_img, numcorners = 300, threshold = 0.5, nHoodSize 
 	
 	# Initialize peak indices numpeaks x 2 array
 	Q = []
-
-	for i in range(numcorners):
+	
+	numCorners = 0
+	
+	while(True):
 		# Find maximum value in Hough
 		max_row, max_column = np.unravel_index(np.argmax(harris_img), (rows, columns)) # Returns location of maximum value in harris_img
 		#print str(max_row) + " " + str(max_column)
@@ -107,11 +109,29 @@ def find_corner_points(harris_img, numcorners = 300, threshold = 0.5, nHoodSize 
 			
 			# Add peak to Q		
 			Q.append([max_row, max_column])
+			numCorners = numCorners + 1
 		else:
 			break
-	#print "\nNumber of corners: {}\n".format(i - 1)
+	#print "\nNumber of corners: {}\n".format(numCorners)
 			
-	return Q
+	return np.array(Q)
+
+def compute_keypoints(Ix, Iy, points):
+	rows, columns = Ix.shape
+	# Compute an angle for every point
+	angles = np.arctan2(points[:, 0], points[:, 1])
+	
+	keypoints = []
+	# Create list of keypoints
+	for i in range((points.shape)[0]):
+		# Set the value of _octave to 0, since all points were located at the full scale version of the image
+		point = cv2.KeyPoint(points[i][1], points[i][0], _size = 3, _angle = angles[i], _octave = 0)
+		keypoints.append(point)
+	
+	return keypoints
+
+def draw_matches():
+	print "TO DO"
 	
 def main():
 	# 1-A: Compute X and Y gradients
@@ -160,7 +180,7 @@ def main():
 	print "\n-----------------------1-C-----------------------"
 	'''
 	# Test on check
-	corner_points = find_corner_points(test_harris_image, 25, 0.5, [5, 5])
+	corner_points = find_corner_points(test_harris_image, 0.5, [5, 5])
 	# Highlight peak locations on accumulator array, save as output/ps1-2-b-1.png
 	test = cv2.cvtColor(test,cv2.COLOR_GRAY2RGB)
 	for i in range(len(corner_points)):
@@ -169,41 +189,79 @@ def main():
 	cv2.imwrite('output/test_corners.png', test)
 	'''
 	# transA
-	corner_points = find_corner_points(transA_harris_image, 300, 0.05)
+	transA_corner_points = find_corner_points(transA_harris_image, 0.35)
 	# Highlight peak locations on accumulator array, save as output/ps1-2-b-1.png
-	transA = cv2.cvtColor(transA, cv2.COLOR_GRAY2RGB)
-	for i in range(len(corner_points)):
-		cv2.circle(transA, (corner_points[i][1], corner_points[i][0]), 3, (0, 0, 255), thickness=2, lineType=8) # Draw a circle using center coordinates and radius
+	transA_draw_corner_points = cv2.cvtColor(transA, cv2.COLOR_GRAY2RGB)
+	for i in range(len(transA_corner_points)):
+		cv2.circle(transA_draw_corner_points, (transA_corner_points[i][1], transA_corner_points[i][0]), 3, (0, 0, 255), thickness=2, lineType=8) # Draw a circle using center coordinates and radius
 	# Plot/show accumulator array H, save as output/ps1-2-a-1.png
-	cv2.imwrite('output/ps4-1-c-1.png', transA)
+	cv2.imwrite('output/ps4-1-c-1.png', transA_draw_corner_points)
 	# transB
-	corner_points = find_corner_points(transB_harris_image, 300, 0.05)
+	transB_corner_points = find_corner_points(transB_harris_image, 0.30)
 	# Highlight peak locations on accumulator array, save as output/ps1-2-b-1.png
-	transB = cv2.cvtColor(transB, cv2.COLOR_GRAY2RGB)
-	for i in range(len(corner_points)):
-		cv2.circle(transB, (corner_points[i][1], corner_points[i][0]), 3, (0, 0, 255), thickness=2, lineType=8) # Draw a circle using center coordinates and radius
+	transB_draw_corner_points = cv2.cvtColor(transB, cv2.COLOR_GRAY2RGB)
+	for i in range(len(transB_corner_points)):
+		cv2.circle(transB_draw_corner_points, (transB_corner_points[i][1], transB_corner_points[i][0]), 3, (0, 0, 255), thickness=2, lineType=8) # Draw a circle using center coordinates and radius
 	# Plot/show accumulator array H, save as output/ps1-2-a-1.png
-	cv2.imwrite('output/ps4-1-c-2.png', transB)
+	cv2.imwrite('output/ps4-1-c-2.png', transB_draw_corner_points)
 	# simA
-	corner_points = find_corner_points(simA_harris_image, 300, 0.05)
+	simA_corner_points = find_corner_points(simA_harris_image, 0.25)
 	# Highlight peak locations on accumulator array, save as output/ps1-2-b-1.png
-	simA = cv2.cvtColor(simA,cv2.COLOR_GRAY2RGB)
-	for i in range(len(corner_points)):
-		cv2.circle(simA, (corner_points[i][1], corner_points[i][0]), 3, (0, 0, 255), thickness=2, lineType=8) # Draw a circle using center coordinates and radius
+	simA_draw_corner_points = cv2.cvtColor(simA,cv2.COLOR_GRAY2RGB)
+	for i in range(len(simA_corner_points)):
+		cv2.circle(simA_draw_corner_points, (simA_corner_points[i][1], simA_corner_points[i][0]), 3, (0, 0, 255), thickness=2, lineType=8) # Draw a circle using center coordinates and radius
 	# Plot/show accumulator array H, save as output/ps1-2-a-1.png
-	cv2.imwrite('output/ps4-1-c-3.png', simA)
+	cv2.imwrite('output/ps4-1-c-3.png', simA_draw_corner_points)
 	# simB
-	corner_points = find_corner_points(simB_harris_image, 300, 0.05)
+	simB_corner_points = find_corner_points(simB_harris_image, 0.20)
 	# Highlight peak locations on accumulator array, save as output/ps1-2-b-1.png
-	simB = cv2.cvtColor(simB,cv2.COLOR_GRAY2RGB)
-	for i in range(len(corner_points)):
-		cv2.circle(simB, (corner_points[i][1], corner_points[i][0]), 3, (0, 0, 255), thickness=2, lineType=8) # Draw a circle using center coordinates and radius
+	simB_draw_corner_points = cv2.cvtColor(simB,cv2.COLOR_GRAY2RGB)
+	for i in range(len(simB_corner_points)):
+		cv2.circle(simB_draw_corner_points, (simB_corner_points[i][1], simB_corner_points[i][0]), 3, (0, 0, 255), thickness=2, lineType=8) # Draw a circle using center coordinates and radius
 	# Plot/show accumulator array H, save as output/ps1-2-a-1.png
-	cv2.imwrite('output/ps4-1-c-4.png', simB)
+	cv2.imwrite('output/ps4-1-c-4.png', simB_draw_corner_points)
 	
 	# 2-A: Interest points an angles
-	print "\n-----------------------1-C-----------------------"
+	print "\n-----------------------2-A-----------------------"
+	# Calculate angles for every keypoint pair in every image
+	transA_keypoints = compute_keypoints(transA_x, transA_y, transA_corner_points)
+	transB_keypoints = compute_keypoints(transB_x, transB_y, transB_corner_points)
+	simA_keypoints = compute_keypoints(simA_x, simA_y, simA_corner_points)
+	simB_keypoints = compute_keypoints(simB_x, simB_y, simB_corner_points)
+	# Draw keypoints on image
+	transA_draw_keypoints = cv2.drawKeypoints(transA, transA_keypoints, None)
+	transB_draw_keypoints = cv2.drawKeypoints(transB, transB_keypoints, None)
+	transAB_with_keypoints = cv2.hconcat([transA_draw_keypoints, transB_draw_keypoints])
+	cv2.imwrite('output/ps4-2-a-1.png', transAB_with_keypoints)
+	simA_draw_keypoints = cv2.drawKeypoints(simA, simA_keypoints, None)
+	simB_draw_keypoints = cv2.drawKeypoints(simB, simB_keypoints, None)
+	simAB_with_keypoints = cv2.hconcat([simA_draw_keypoints, simB_draw_keypoints])
+	cv2.imwrite('output/ps4-2-a-2.png', simAB_with_keypoints)
 	
+	# 2-B: Interest points an angles
+	print "\n-----------------------2-B-----------------------"
+	# Create an instance of the class cv2.SIFT
+	sift = cv2.xfeatures2d.SIFT_create()
+	# Create BFMatcher instance
+	bf = cv2.BFMatcher()
+	# Extracting the SIFT descriptors then requires to call the SIFT.compute() function:
+	transA_points, transA_descriptors = sift.compute(transA ,transA_keypoints)
+	transB_points, transB_descriptors = sift.compute(transB ,transB_keypoints)
+	simA_points, simA_descriptors = sift.compute(simA ,simA_keypoints)
+	simB_points, simB_descriptors = sift.compute(simB , simB_keypoints)
+	# Match descriptors
+	trans_matches = bf.match(transA_descriptors, transB_descriptors)
+	sim_matches = bf.match(simA_descriptors, simB_descriptors)
+	# Sort them in order of distance
+	trans_matches = sorted(trans_matches, key = lambda x:x.distance)
+	sim_matches = sorted(sim_matches, key = lambda x:x.distance)
+	# Draw best 10 matches
+	trans_putative_pair_image = cv2.drawMatches(transA, transA_points, transB, transB_points, trans_matches[:10], None, flags=2)
+	sim_putative_pair_image = cv2.drawMatches(simA, simA_points, simB, simB_points, sim_matches[:10], None, flags=2)
+	# Save images
+	cv2.imwrite('output/ps4-2-b-1.png', trans_putative_pair_image)
+	cv2.imwrite('output/ps4-2-b-2.png', sim_putative_pair_image)
+
 	
 if __name__ == "__main__":
 	main()
