@@ -5,6 +5,7 @@ import numpy as np
 import cv2
 import math
 import random
+from matplotlib import pyplot as plt
 
 #################################################################################
 # Normalize image
@@ -92,6 +93,11 @@ def find_corner_points(harris_img, threshold = 0.5, nHoodSize = [1, 1]):
 	numCorners = 0
 	
 	while(True):
+	
+		# Test on 10 points
+		if numCorners == 10:
+			break
+	
 		# Find maximum value in Hough
 		max_row, max_column = np.unravel_index(np.argmax(harris_img), (rows, columns)) # Returns location of maximum value in harris_img
 		#print str(max_row) + " " + str(max_column)
@@ -116,11 +122,12 @@ def find_corner_points(harris_img, threshold = 0.5, nHoodSize = [1, 1]):
 			
 	return np.array(Q)
 
-def compute_keypoints(Ix, Iy, points):
-	rows, columns = Ix.shape
+#################################################################################
+# Translate feature points into SIFT keypoints using X and Y gradients 
+#################################################################################
+def compute_keypoints(points):
 	# Compute an angle for every point
 	angles = np.arctan2(points[:, 0], points[:, 1])
-	
 	keypoints = []
 	# Create list of keypoints
 	for i in range((points.shape)[0]):
@@ -130,8 +137,164 @@ def compute_keypoints(Ix, Iy, points):
 	
 	return keypoints
 
-def draw_matches():
-	print "TO DO"
+#################################################################################
+# Use matches and points from SIFT to draw lines connecting points in two images 
+#################################################################################
+def draw_matches(img1, points1, img2, points2, matches):
+	rows, columns = img1.shape
+	# Concatenate two images
+	img_concat = cv2.hconcat([img1, img2])
+	# Change image from gray to colored image
+	img_concat = cv2.cvtColor(img_concat, cv2.COLOR_GRAY2RGB)
+	for m in matches:
+		#print "\nIndex1: {} Index2: {}\n".format(m.queryIdx, m.trainIdx)
+		#print "Point1: {}, {}".format(points1[index1].pt[0], points1[index1].pt[1])
+		#print "Point2: {}, {}".format(points2[index2].pt[0], points2[index2].pt[1])
+		# Index in points1 and points2
+		index1 = m.queryIdx
+		index2 = m.trainIdx
+		# Index in img1 and img2
+		p1_col = int(points1[index1].pt[0])
+		p1_row = int(points1[index1].pt[1])
+		p2_col = int(points2[index2].pt[0]) + columns
+		p2_row = int(points2[index2].pt[1])
+		# Draw key points
+		cv2.circle(img_concat, (p1_col, p1_row), 3, (255, 0, 0), thickness = 1, lineType = 8) # Draw a circle using center coordinates and radius
+		cv2.circle(img_concat, (p2_col, p2_row), 3, (255, 0, 0), thickness = 1, lineType = 8) # Draw a circle using center coordinates and radius
+		# Draw line (image, (column, row), (column, row), color, thickness)
+		cv2.line(img_concat, (p1_col, p1_row), (p2_col, p2_row), (255, 0, 0), 1)
+		
+	return img_concat
+
+def calculate_residual(point1, point2):
+	# You can do the comparison by checking the residual
+	# between the predicted location of each test point using your equation and the actual location
+	# given by the 2D input data. The residual is just the distance (square root of the sum of squared
+	# differences in u and v).
+	return math.sqrt(math.pow(point1[0] - point2[0], 2) + math.pow(point1[1] - point2[1], 2))
+
+#################################################################################
+# Ransac_translation returns matches for translation images with best consensus
+# s - minimal set (minimal number to fit the model)
+# t - distance threshold (needs noise model)
+# N - number of samples (Choose N so that, with probability p, at least one
+#     random sample set is free from outliers (e.g. p = 0.99))
+#################################################################################
+def ransac_translation(points1, points2, matches):	
+	# Calculate N (number of samples)
+	s = 2 # minimal set (minimal number to fit the model)
+	p = 0.99 # probability of success - designer's choice
+	e = 0.05 # proportion of outliers, inliers = (1 - e) - designer's choice
+	N = int(math.log(1 - p, 2) / math.log(1 - math.pow(1 - e, s)))
+	#print "\nN: {}\n".format(N)
+	# Calculate t (threshold for residual)
+	t = 200
+
+	matches_len = len(matches)
+	offsets = []
+	# Calculate offset for every match
+	for i in range(matches_len):
+		m = matches[i]
+		# Offsets
+		col_offset = int(points1[m.queryIdx].pt[0] - points2[m.trainIdx].pt[0])
+		row_offset = int(points1[m.queryIdx].pt[1] - points2[m.trainIdx].pt[1])
+		offsets.append([col_offset, row_offset])
+	offsets = np.array(offsets)
+
+	# Randomly select N of the putative matches - calculate offset (a translation in X and Y ) between the two images
+	# Find out how many other putative matches agree with this offset (account for noise)
+	random_matches = []
+	if N > matches_len:
+		random_matches = random.sample(range(0, matches_len), matches_len)
+	else:
+		random_matches = random.sample(range(0, matches_len), N)
+	best_consensus = [] # initially no matches
+	best_consensus_count = 0 # initially no matches
+	best_offset = []
+	for i in random_matches:
+		# Offsets
+		offset = offsets[i]
+		
+		matches_new = []
+		matches_new_count = 0
+		for i_new in range(matches_len):
+			# Offsets
+			offset_residual = calculate_residual(offset, offsets[i_new])
+			# Check that the difference in offsets (residual) is not too large
+			if (offset_residual < t):
+				matches_new.append(matches[i_new])
+				matches_new_count = matches_new_count + 1
+				
+		if best_consensus_count < matches_new_count:
+			best_consensus = matches_new
+			best_consensus_count = matches_new_count
+			best_offset = offset
+	
+	#print "\nBest offset: {}\n".format(best_offset)
+	return best_consensus
+'''
+#################################################################################
+# Ransac_similarity returns matches for translation images with best consensus
+# s - minimal set (minimal number to fit the model)
+# t - distance threshold (needs noise model)
+# N - number of samples (Choose N so that, with probability p, at least one
+#     random sample set is free from outliers (e.g. p = 0.99))
+#################################################################################
+def ransac_similarity(points1, points2, matches):	
+	# Calculate N (number of samples)
+	s = 4 # minimal set (minimal number to fit the model)
+	p = 0.99 # probability of success - designer's choice
+	e = 0.05 # proportion of outliers, inliers = (1 - e) - designer's choice
+	N = int(math.log(1 - p, 2) / math.log(1 - math.pow(1 - e, s)))
+	#print "\nN: {}\n".format(N)
+	# Calculate t (threshold for residual)
+	t = 200
+
+	matches_len = len(matches)
+
+	# Randomly select N of the putative matches - calculate offset (a translation in X and Y ) between the two images
+	# Find out how many other putative matches agree with this offset (account for noise)
+	best_consensus = [] # initially no matches
+	best_consensus_count = 0 # initially no matches
+	best_offset = []
+	for i in range(N):
+		random_matches = random.sample(range(0, matches_len), matches_len - (matches_len % 2))
+		
+		###############
+		TODOOOOOOOOOOO
+		###############
+		
+		matches_new = []
+		matches_new_count = 0
+		for i_new in range(matches_len):
+			# Offsets
+			offset_residual = calculate_residual(offset, offsets[i_new])
+			# Check that the difference in offsets (residual) is not too large
+			if (offset_residual < t):
+				matches_new.append(matches[i_new])
+				matches_new_count = matches_new_count + 1
+				
+		if best_consensus_count < matches_new_count:
+			best_consensus = matches_new
+			best_consensus_count = matches_new_count
+			best_offset = offset
+	
+	#print "\nBest offset: {}\n".format(best_offset)
+	return best_consensus
+'''
+#################################################################################
+# Solves for similarity transform using 2 pair 
+#################################################################################
+def solve_similarity_transform(point1_1, point1_2, point2_1, point2_2):
+	# Create 4 by 5 matrix to solve using Gaussian elimination
+	A = np.array([[point1_1[0], -point1_1[1], 1, 0], 
+				  [point1_1[1], point1_1[0], 0, 1], 
+				  [point2_1[0], -point2_1[1], 1, 0], 
+				  [point2_1[1], point2_1[0], 0, 1]])
+	b = np.array([point1_2[0], point1_2[1], point2_2[0], point2_2[1]])
+	solution = numpy.linalg.solve(A, b) # [a, b, c, d]
+	similarity_transform = np.array([[solution[0], -solution[1], solution[2]], [solution[1], solution[0], solution[3]]])
+	return similarity_transform
 	
 def main():
 	# 1-A: Compute X and Y gradients
@@ -221,24 +384,31 @@ def main():
 	# Plot/show accumulator array H, save as output/ps1-2-a-1.png
 	cv2.imwrite('output/ps4-1-c-4.png', simB_draw_corner_points)
 	
-	# 2-A: Interest points an angles
+	# 2-A: SIFT - Interest points an angles
 	print "\n-----------------------2-A-----------------------"
 	# Calculate angles for every keypoint pair in every image
-	transA_keypoints = compute_keypoints(transA_x, transA_y, transA_corner_points)
-	transB_keypoints = compute_keypoints(transB_x, transB_y, transB_corner_points)
-	simA_keypoints = compute_keypoints(simA_x, simA_y, simA_corner_points)
-	simB_keypoints = compute_keypoints(simB_x, simB_y, simB_corner_points)
+	transA_keypoints = compute_keypoints(transA_corner_points)
+	transB_keypoints = compute_keypoints(transB_corner_points)
+	simA_keypoints = compute_keypoints(simA_corner_points)
+	simB_keypoints = compute_keypoints(simB_corner_points)
 	# Draw keypoints on image
-	transA_draw_keypoints = cv2.drawKeypoints(transA, transA_keypoints, None)
-	transB_draw_keypoints = cv2.drawKeypoints(transB, transB_keypoints, None)
+	transA_draw_keypoints = cv2.drawKeypoints(transA, transA_keypoints, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+	transB_draw_keypoints = cv2.drawKeypoints(transB, transB_keypoints, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+	
+	plt.subplot(121),plt.imshow(transA_draw_keypoints)
+	plt.title('Original Image'), plt.xticks([]), plt.yticks([])
+	plt.subplot(122),plt.imshow(transB_draw_keypoints)
+	plt.title('Edge Image'), plt.xticks([]), plt.yticks([])
+	plt.show()
+
 	transAB_with_keypoints = cv2.hconcat([transA_draw_keypoints, transB_draw_keypoints])
 	cv2.imwrite('output/ps4-2-a-1.png', transAB_with_keypoints)
-	simA_draw_keypoints = cv2.drawKeypoints(simA, simA_keypoints, None)
-	simB_draw_keypoints = cv2.drawKeypoints(simB, simB_keypoints, None)
+	simA_draw_keypoints = cv2.drawKeypoints(simA, simA_keypoints, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+	simB_draw_keypoints = cv2.drawKeypoints(simB, simB_keypoints, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 	simAB_with_keypoints = cv2.hconcat([simA_draw_keypoints, simB_draw_keypoints])
 	cv2.imwrite('output/ps4-2-a-2.png', simAB_with_keypoints)
 	
-	# 2-B: Interest points an angles
+	# 2-B: SIFT - Interest points an angles
 	print "\n-----------------------2-B-----------------------"
 	# Create an instance of the class cv2.SIFT
 	sift = cv2.xfeatures2d.SIFT_create()
@@ -255,13 +425,27 @@ def main():
 	# Sort them in order of distance
 	trans_matches = sorted(trans_matches, key = lambda x:x.distance)
 	sim_matches = sorted(sim_matches, key = lambda x:x.distance)
-	# Draw best 10 matches
-	trans_putative_pair_image = cv2.drawMatches(transA, transA_points, transB, transB_points, trans_matches[:10], None, flags=2)
-	sim_putative_pair_image = cv2.drawMatches(simA, simA_points, simB, simB_points, sim_matches[:10], None, flags=2)
+	# Draw lines connecting points in two images
+	#trans_putative_pair_image = cv2.drawMatches(transA, transA_points, transB, transB_points, trans_matches, None, flags=2)
+	#sim_putative_pair_image = cv2.drawMatches(simA, simA_points, simB, simB_points, sim_matches, None, flags=2)
+	trans_putative_pair_image = draw_matches(transA, transA_points, transB, transB_points, trans_matches)
+	sim_putative_pair_image = draw_matches(simA, simA_points, simB, simB_points, sim_matches)
 	# Save images
 	cv2.imwrite('output/ps4-2-b-1.png', trans_putative_pair_image)
 	cv2.imwrite('output/ps4-2-b-2.png', sim_putative_pair_image)
-
+	
+	# 3-A: RANSAC - Translational case
+	print "\n-----------------------3-A-----------------------"
+	trans_best_matches = ransac_translation(transA_points, transB_points, trans_matches)
+	trans_putative_pair_image = draw_matches(transA, transA_points, transB, transB_points, trans_best_matches)
+	cv2.imwrite('output/ps4-3-a-1.png', trans_putative_pair_image)
+	'''
+	# 3-B: RANSAC - Similarity transform - similarity transform allows translation, rotation and scaling
+	print "\n-----------------------3-B-----------------------"
+	sim_best_matches = ransac_similarity(simA_points, simB_points, sim_matches)
+	sim_putative_pair_image = draw_matches(simA, simA_points, simB, simB_points, sim_best_matches)
+	cv2.imwrite('output/ps4-3-a-1.png', sim_putative_pair_image)
+	'''
 	
 if __name__ == "__main__":
 	main()
