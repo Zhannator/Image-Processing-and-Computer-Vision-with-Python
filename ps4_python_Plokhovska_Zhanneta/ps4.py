@@ -249,7 +249,7 @@ def ransac_similarity(points1, points2, matches):
 	N = int(math.log(1 - p, 2) / math.log(1 - math.pow(1 - e, s)))
 	print "\nNumber of samples (N): {}\n".format(N)
 	# Calculate t (threshold for residual)
-	t = 0.40
+	t = 1.5
 	
 	matches_len = len(matches)
 	solutions = []
