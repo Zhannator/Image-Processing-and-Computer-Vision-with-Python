@@ -6,6 +6,7 @@ import cv2
 import math
 import random
 from matplotlib import pyplot as plt
+import itertools
 
 #################################################################################
 # Normalize image
@@ -93,11 +94,6 @@ def find_corner_points(harris_img, threshold = 0.5, nHoodSize = [1, 1]):
 	numCorners = 0
 	
 	while(True):
-	
-		# Test on 10 points
-		if numCorners == 10:
-			break
-	
 		# Find maximum value in Hough
 		max_row, max_column = np.unravel_index(np.argmax(harris_img), (rows, columns)) # Returns location of maximum value in harris_img
 		#print str(max_row) + " " + str(max_column)
@@ -166,12 +162,16 @@ def draw_matches(img1, points1, img2, points2, matches):
 		
 	return img_concat
 
-def calculate_residual(point1, point2):
-	# You can do the comparison by checking the residual
-	# between the predicted location of each test point using your equation and the actual location
-	# given by the 2D input data. The residual is just the distance (square root of the sum of squared
-	# differences in u and v).
-	return math.sqrt(math.pow(point1[0] - point2[0], 2) + math.pow(point1[1] - point2[1], 2))
+#################################################################################
+# Calculate residual between values of two lists of the same size 
+#################################################################################
+def calculate_residual(list1, list2):
+	list_len = len(list1)
+	residual_squared_sum = 0
+	for i in range(list_len):
+		residual_squared_sum = residual_squared_sum + math.pow(list1[i] - list2[i], 2)
+	
+	return math.sqrt(residual_squared_sum)
 
 #################################################################################
 # Ransac_translation returns matches for translation images with best consensus
@@ -186,7 +186,7 @@ def ransac_translation(points1, points2, matches):
 	p = 0.99 # probability of success - designer's choice
 	e = 0.05 # proportion of outliers, inliers = (1 - e) - designer's choice
 	N = int(math.log(1 - p, 2) / math.log(1 - math.pow(1 - e, s)))
-	#print "\nN: {}\n".format(N)
+	print "\nNumber of samples (N): {}\n".format(N)
 	# Calculate t (threshold for residual)
 	t = 200
 
@@ -230,9 +230,10 @@ def ransac_translation(points1, points2, matches):
 			best_consensus_count = matches_new_count
 			best_offset = offset
 	
-	#print "\nBest offset: {}\n".format(best_offset)
+	print "\nPercentage of matches: {}\n".format((float(best_consensus_count) / float(matches_len)) * 100)
+	print "\nBest offset: {}\n".format(best_offset)
 	return best_consensus
-'''
+
 #################################################################################
 # Ransac_similarity returns matches for translation images with best consensus
 # s - minimal set (minimal number to fit the model)
@@ -246,55 +247,76 @@ def ransac_similarity(points1, points2, matches):
 	p = 0.99 # probability of success - designer's choice
 	e = 0.05 # proportion of outliers, inliers = (1 - e) - designer's choice
 	N = int(math.log(1 - p, 2) / math.log(1 - math.pow(1 - e, s)))
-	#print "\nN: {}\n".format(N)
+	print "\nNumber of samples (N): {}\n".format(N)
 	# Calculate t (threshold for residual)
-	t = 200
-
+	t = 0.40
+	
 	matches_len = len(matches)
-
+	solutions = []
+	point_combinations = list(itertools.combinations(range(matches_len - (matches_len % 2)), 2))
+	point_combinations_len = len(point_combinations)
+	# Calculate similarity transform for every match
+	for i in range(point_combinations_len):
+		m_1 = matches[point_combinations[i][0]]
+		m_2 = matches[point_combinations[i][1]]
+		# Calculate similarity transform
+		solution = solve_4x4_matrix(points1[m_1.queryIdx].pt, points2[m_1.trainIdx].pt, points1[m_2.queryIdx].pt, points2[m_2.trainIdx].pt)
+		solutions.append(solution)
+	solutions = np.array(solutions)
+	
 	# Randomly select N of the putative matches - calculate offset (a translation in X and Y ) between the two images
 	# Find out how many other putative matches agree with this offset (account for noise)
 	best_consensus = [] # initially no matches
 	best_consensus_count = 0 # initially no matches
-	best_offset = []
+	best_solution = []
 	for i in range(N):
-		random_matches = random.sample(range(0, matches_len), matches_len - (matches_len % 2))
-		
-		###############
-		TODOOOOOOOOOOO
-		###############
-		
+		# Get a random order of point_combinations
+		random_combos = random.sample(range(0, point_combinations_len), point_combinations_len)
+		# Calculate similarity transform
+		solution = solutions[random_combos[0]]
+		# Calculate residual and see what other combos have similar solutions
 		matches_new = []
 		matches_new_count = 0
-		for i_new in range(matches_len):
-			# Offsets
-			offset_residual = calculate_residual(offset, offsets[i_new])
-			# Check that the difference in offsets (residual) is not too large
-			if (offset_residual < t):
-				matches_new.append(matches[i_new])
-				matches_new_count = matches_new_count + 1
+		matches_new_indexes = []
+		for i_new in range(point_combinations_len):
+			# Solution residual
+			solution_residual = calculate_residual(solution, solutions[random_combos[i_new]])
+			# Check that the difference in solutions (residual) is not too large
+			if (solution_residual < t):
+				#print "\nResidual: {}\n".format(solution_residual)
+				matches_new_indexes.append(point_combinations[i_new][0])
+				matches_new_indexes.append(point_combinations[i_new][1])
+		
+		matches_new_indexes = set(matches_new_indexes)
+		matches_new_count = len(matches_new_indexes)
+		for i_new in range(matches_new_count):
+			matches_new.append(matches[i_new])
 				
 		if best_consensus_count < matches_new_count:
 			best_consensus = matches_new
 			best_consensus_count = matches_new_count
-			best_offset = offset
+			best_solution = solution
 	
-	#print "\nBest offset: {}\n".format(best_offset)
+	print "\nPercentage of matches: {}\n".format((float(best_consensus_count) / float(matches_len)) * 100)
+	print "\nBest similarity transform:\n{}\n".format(np.array([[best_solution[0], -best_solution[1], best_solution[2]], [best_solution[1], best_solution[0], best_solution[3]]]))
 	return best_consensus
-'''
+
 #################################################################################
 # Solves for similarity transform using 2 pair 
 #################################################################################
-def solve_similarity_transform(point1_1, point1_2, point2_1, point2_2):
-	# Create 4 by 5 matrix to solve using Gaussian elimination
+def solve_4x4_matrix(point1_1, point1_2, point2_1, point2_2):
+	# Create 4 by 4 A matrix and 1 by 2 matrix to solve using Gaussian elimination
+	# u0' = (u0)*a + (-v0)*b + (1)*c + (0)*d
+	# v0' = (v0)*a + (u0)*b + (0)*c + (1)*d
+	# u1' = (u1)*a + (-v1)*b + (1)*c + (0)*d
+	# v1' = (v1)*a + (u1)*b + (0)*c + (1)*d
 	A = np.array([[point1_1[0], -point1_1[1], 1, 0], 
 				  [point1_1[1], point1_1[0], 0, 1], 
 				  [point2_1[0], -point2_1[1], 1, 0], 
 				  [point2_1[1], point2_1[0], 0, 1]])
 	b = np.array([point1_2[0], point1_2[1], point2_2[0], point2_2[1]])
-	solution = numpy.linalg.solve(A, b) # [a, b, c, d]
-	similarity_transform = np.array([[solution[0], -solution[1], solution[2]], [solution[1], solution[0], solution[3]]])
-	return similarity_transform
+	solution = np.linalg.solve(A, b) # [a, b, c, d]
+	return solution
 	
 def main():
 	# 1-A: Compute X and Y gradients
@@ -394,13 +416,6 @@ def main():
 	# Draw keypoints on image
 	transA_draw_keypoints = cv2.drawKeypoints(transA, transA_keypoints, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 	transB_draw_keypoints = cv2.drawKeypoints(transB, transB_keypoints, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-	
-	plt.subplot(121),plt.imshow(transA_draw_keypoints)
-	plt.title('Original Image'), plt.xticks([]), plt.yticks([])
-	plt.subplot(122),plt.imshow(transB_draw_keypoints)
-	plt.title('Edge Image'), plt.xticks([]), plt.yticks([])
-	plt.show()
-
 	transAB_with_keypoints = cv2.hconcat([transA_draw_keypoints, transB_draw_keypoints])
 	cv2.imwrite('output/ps4-2-a-1.png', transAB_with_keypoints)
 	simA_draw_keypoints = cv2.drawKeypoints(simA, simA_keypoints, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
@@ -437,15 +452,14 @@ def main():
 	# 3-A: RANSAC - Translational case
 	print "\n-----------------------3-A-----------------------"
 	trans_best_matches = ransac_translation(transA_points, transB_points, trans_matches)
-	trans_putative_pair_image = draw_matches(transA, transA_points, transB, transB_points, trans_best_matches)
-	cv2.imwrite('output/ps4-3-a-1.png', trans_putative_pair_image)
-	'''
+	trans_best_matches_image = draw_matches(transA, transA_points, transB, transB_points, trans_best_matches)
+	cv2.imwrite('output/ps4-3-a-1.png', trans_best_matches_image)
+
 	# 3-B: RANSAC - Similarity transform - similarity transform allows translation, rotation and scaling
 	print "\n-----------------------3-B-----------------------"
 	sim_best_matches = ransac_similarity(simA_points, simB_points, sim_matches)
-	sim_putative_pair_image = draw_matches(simA, simA_points, simB, simB_points, sim_best_matches)
-	cv2.imwrite('output/ps4-3-a-1.png', sim_putative_pair_image)
-	'''
+	sim_best_matches_image = draw_matches(simA, simA_points, simB, simB_points, sim_best_matches)
+	cv2.imwrite('output/ps4-3-b-1.png', sim_best_matches_image)
 	
 if __name__ == "__main__":
 	main()
