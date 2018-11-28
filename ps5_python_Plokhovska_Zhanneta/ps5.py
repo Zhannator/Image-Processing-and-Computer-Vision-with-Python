@@ -77,8 +77,11 @@ def normalize(img, distribute = True):
 		img = (img * (1/img.max()) * 255) # distribute values between 0 and 255
 	return img.astype('uint8')
 
-def reduce(img):
+def gaussian_pyramid_reduce(img):
 	return img[::2, 1::2]
+
+def gaussian_pyramid_expand(img):
+	print "TODO"
 	
 def main():
 	if False:
@@ -137,7 +140,7 @@ def main():
 		plt.imshow(shift0_shiftr40);
 		plt.savefig('output/ps5-1-b-3.png')
 	
-	# 2-A: Gaussian and Laplacian Pyramids
+	# 2-A: Gaussian and Laplacian Pyramids - Reduce
 	print "\n-----------------------2-A-----------------------" 
 	# Read images
 	yos1 = cv2.imread(os.path.join('input/DataSeq1', 'yos_img_01.jpg'), 0)
@@ -148,10 +151,10 @@ def main():
 	yos2 = cv2.GaussianBlur(yos2, (5, 5), 0)
 	yos3 = cv2.GaussianBlur(yos3, (5, 5), 0)
 	# Reduce images
-	yos1_reduced1 = reduce(yos1)
-	yos1_reduced2 = reduce(yos1_reduced1)
-	yos1_reduced3 = reduce(yos1_reduced2)
-	yos1_reduced4 = reduce(yos1_reduced3)
+	yos1_reduced1 = gaussian_pyramid_reduce(yos1)
+	yos1_reduced2 = gaussian_pyramid_reduce(yos1_reduced1)
+	yos1_reduced3 = gaussian_pyramid_reduce(yos1_reduced2)
+	yos1_reduced4 = gaussian_pyramid_reduce(yos1_reduced3)
 	# Save images
 	fig = plt.figure()
 	plt.subplot(711)
@@ -167,6 +170,10 @@ def main():
 	plt.imshow(yos1_reduced4);
 	plt.title('1/16')
 	plt.savefig('output/ps5-2-a-1.png')
+	
+	# 2-B: Gaussian and Laplacian Pyramids - Expand
+	print "\n-----------------------2-B-----------------------"
+	
 	
 if __name__ == "__main__":
 	main()
