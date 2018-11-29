@@ -137,9 +137,9 @@ def warp(i2, vx, vy):
 	x, y = np.meshgrid(range(0, N), range(0, M))
 	# use Python interpolation routine
 	#warpI3 = np.zeros((M, N))
-	warpI3 = cv2.remap(i2, x + vx, y + vy, cv2.INTER_NEAREST) # warpI3 = interp2(x,y,i2,x+vx,y+vy,'*nearest')
+	warpI3 = cv2.remap(i2, (x + vx).astype(np.float32), (y + vy).astype(np.float32), cv2.INTER_NEAREST) # warpI3 = interp2(x,y,i2,x+vx,y+vy,'*nearest')
 	# use Python interpolation routine 
-	warpI2 = cv2.remap(i2, x + vx, y + vy, cv2.INTER_LINEAR) # warpI2 = interp2(x,y,i2,x+vx,y+vy,'*linear')
+	warpI2 = cv2.remap(i2, (x + vx).astype(np.float32), (y + vy).astype(np.float32), cv2.INTER_LINEAR) # warpI2 = interp2(x,y,i2,x+vx,y+vy,'*linear')
 	I = np.nonzero(np.isnan(warpI2))
 	warpI2[I] = warpI3[I]
 	
@@ -280,10 +280,17 @@ def main():
 	plt.colorbar()
 	plt.savefig('output/ps5-3-a-1.png')
 	# Difference image between warped image 2 and original image 1
-	#yos2_warp = warp(yos2_reduced, yos1_yos2_u, yos1_yos2_v)
-	yos2_warp = cv2.remap(yos2_reduced, (yos1_yos2_u).astype(CV_32FC1), (yos1_yos2_v).astype(CV_32FC1), cv2.INTER_NEAREST) # warpI3 = interp2(x,y,i2,x+vx,y+vy,'*nearest')
+	yos1_yos2_u = yos1_yos2_u.astype(np.float32)
+	yos1_yos2_v = yos1_yos2_v.astype(np.float32)
+	yos2_warp = warp(yos2_reduced, yos1_yos2_u, yos1_yos2_v)
+	#yos2_warp = cv2.remap(yos2_reduced, yos1_yos2_u, yos1_yos2_v, cv2.INTER_NEAREST) # warpI3 = interp2(x,y,i2,x+vx,y+vy,'*nearest')
 	yos2_warp_yos_1_difference = yos2_warp - yos1_reduced
 	cv2.imwrite('output/ps5-3-a-2.png', yos2_warp_yos_1_difference)
+	# Read in DataSeq2
+	one = cv2.imread(os.path.join('input/DataSeq2', '1.jpg'), 0)
+	two = cv2.imread(os.path.join('input/DataSeq2', '2.jpg'), 0)
+	three = cv2.imread(os.path.join('input/DataSeq2', '3.jpg'), 0)
+	
 	
 if __name__ == "__main__":
 	main()
