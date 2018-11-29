@@ -86,7 +86,7 @@ def reduce(img):
 	img = cv2.GaussianBlur(img, (5, 5), 0)
 	img_reduced = img[::2, 1::2] # select all odd rows
 	rows_reduced, columns_reduced = img_reduced.shape
-	print "Reduced Shape: {}".format(img_reduced.shape)
+	#print "Reduced Shape: {}".format(img_reduced.shape)
 	
 	return img_reduced
 
@@ -101,7 +101,7 @@ def expand(img, shape):
 		for c in range(columns):
 			img_expanded[r * 2, c * 2] = img[r, c]
 	img_expanded = cv2.GaussianBlur(img_expanded, (5, 5), 0)
-	print "Expanded Shape: {}".format(img_expanded.shape)
+	#print "Expanded Shape: {}".format(img_expanded.shape)
 	
 	return img_expanded
 
@@ -125,6 +125,25 @@ def laplacian_pyramid(img):
 	laplac3 = img_expanded3 - img_reduced1
 	
 	return gauss, laplac1, laplac2, laplac3
+	
+#################################################################################
+# Warp Function
+#################################################################################
+def warp(i2, vx, vy):
+	# warp i2 according to flow field in vx vy 
+	# this is a "backwards" warp: 
+	# if vx,vy are correct then warpI2 == i1 
+	M, N = i2.shape 
+	x, y = np.meshgrid(range(0, N), range(0, M))
+	# use Python interpolation routine
+	#warpI3 = np.zeros((M, N))
+	warpI3 = cv2.remap(i2, x + vx, y + vy, cv2.INTER_NEAREST) # warpI3 = interp2(x,y,i2,x+vx,y+vy,'*nearest')
+	# use Python interpolation routine 
+	warpI2 = cv2.remap(i2, x + vx, y + vy, cv2.INTER_LINEAR) # warpI2 = interp2(x,y,i2,x+vx,y+vy,'*linear')
+	I = np.nonzero(np.isnan(warpI2))
+	warpI2[I] = warpI3[I]
+	
+	return warpI2
 	
 def main():
 	if False:
@@ -232,7 +251,39 @@ def main():
 	
 	# 3-A: Warping by flow
 	print "\n-----------------------3-A-----------------------"
-	
+	# x and y displacements for Yos1 and Yos2
+	yos1_reduced = yos1
+	yos2_reduced = yos2
+	yos3_reduced = yos3
+	for i in range(1):
+		yos1_reduced = reduce(yos1_reduced)
+		yos2_reduced = reduce(yos2_reduced)
+		yos3_reduced = reduce(yos3_reduced)
+	yos1_Ix, yos1_Iy = compute_gradient(yos1_reduced)
+	yos1_yos2_It = yos2_reduced - yos1_reduced
+	yos1_yos2_u, yos1_yos2_v = lk_optic_flow(yos1_Ix, yos1_Iy, yos1_yos2_It)
+	yos1_yos2 = cv2.hconcat([normalize(yos1_yos2_u, False), normalize(yos1_yos2_v, False)])
+	# x and y displacements for Yos2 and Yos3
+	yos2_Ix, yos2_Iy = compute_gradient(yos2_reduced)
+	yos2_yos3_It = yos3_reduced - yos2_reduced
+	yos2_yos3_u, yos2_yos3_v = lk_optic_flow(yos2_Ix, yos2_Iy, yos2_yos3_It)
+	yos2_yos3 = cv2.hconcat([normalize(yos2_yos3_u, False), normalize(yos2_yos3_v, False)])
+	# Save images
+	fig = plt.figure()
+	plt.subplot(411)
+	plt.imshow(yos1_yos2);
+	plt.title('DataSeq1: 1 to 2')
+	plt.colorbar()
+	plt.subplot(413)
+	plt.imshow(yos2_yos3);
+	plt.title('DataSeq1: 2 to 3')
+	plt.colorbar()
+	plt.savefig('output/ps5-3-a-1.png')
+	# Difference image between warped image 2 and original image 1
+	#yos2_warp = warp(yos2_reduced, yos1_yos2_u, yos1_yos2_v)
+	yos2_warp = cv2.remap(yos2_reduced, (yos1_yos2_u).astype(CV_32FC1), (yos1_yos2_v).astype(CV_32FC1), cv2.INTER_NEAREST) # warpI3 = interp2(x,y,i2,x+vx,y+vy,'*nearest')
+	yos2_warp_yos_1_difference = yos2_warp - yos1_reduced
+	cv2.imwrite('output/ps5-3-a-2.png', yos2_warp_yos_1_difference)
 	
 if __name__ == "__main__":
 	main()
