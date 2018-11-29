@@ -77,11 +77,30 @@ def normalize(img, distribute = True):
 		img = (img * (1/img.max()) * 255) # distribute values between 0 and 255
 	return img.astype('uint8')
 
-def gaussian_pyramid_reduce(img):
-	return img[::2, 1::2]
+def reduce(img):
+	rows, columns = img.shape
+	# img must always have odd number of rows and columns
+	if rows % 2 == 0:
+		# Add last row to img_reduced
+		np.concatenate((img, np.array([img[rows - 1, :]])), axis = 0)
+	if columns % 2 == 0:
+		# Add last column to img_reduced
+		np.concatenate((img, np.reshape([img[:, columns - 1]], (rows, 1))), axis = 1)
+	img = cv2.GaussianBlur(img, (5, 5), 0)
+	img_reduced = img[::2, 1::2] # select all odd rows
+	
+	return img_reduced
 
-def gaussian_pyramid_expand(img):
-	print "TODO"
+def expand(img):
+	rows, columns = img.shape
+	img_expanded = np.zeros((rows * 2 - 1, columns * 2 - 1)) # img must always have odd number of rows and columns
+	rows_expanded, columns_expanded = img_expanded.shape
+	for r in range(rows):
+		for c in range(columns):
+			img_expanded[r * 2, c * 2] = img[r, c]
+	img_expanded = cv2.GaussianBlur(img_expanded, (5, 5), 0)
+		
+	return img_expanded
 	
 def main():
 	if False:
@@ -146,15 +165,11 @@ def main():
 	yos1 = cv2.imread(os.path.join('input/DataSeq1', 'yos_img_01.jpg'), 0)
 	yos2 = cv2.imread(os.path.join('input/DataSeq1', 'yos_img_02.jpg'), 0)
 	yos3 = cv2.imread(os.path.join('input/DataSeq1', 'yos_img_03.jpg'), 0)
-	# Smooth images
-	yos1 = cv2.GaussianBlur(yos1, (5, 5), 0)
-	yos2 = cv2.GaussianBlur(yos2, (5, 5), 0)
-	yos3 = cv2.GaussianBlur(yos3, (5, 5), 0)
 	# Reduce images
-	yos1_reduced1 = gaussian_pyramid_reduce(yos1)
-	yos1_reduced2 = gaussian_pyramid_reduce(yos1_reduced1)
-	yos1_reduced3 = gaussian_pyramid_reduce(yos1_reduced2)
-	yos1_reduced4 = gaussian_pyramid_reduce(yos1_reduced3)
+	yos1_reduced1 = reduce(yos1)
+	yos1_reduced2 = reduce(yos1_reduced1)
+	yos1_reduced3 = reduce(yos1_reduced2)
+	yos1_reduced4 = reduce(yos1_reduced3)
 	# Save images
 	fig = plt.figure()
 	plt.subplot(711)
@@ -173,7 +188,26 @@ def main():
 	
 	# 2-B: Gaussian and Laplacian Pyramids - Expand
 	print "\n-----------------------2-B-----------------------"
-	
+	# Reduce images
+	yos1_expanded1 = expand(yos1_reduced4)
+	yos1_expanded2 = expand(yos1_expanded1)
+	yos1_expanded3 = expand(yos1_expanded2)
+	yos1_expanded4 = expand(yos1_expanded3)
+	# Save images
+	fig = plt.figure()
+	plt.subplot(711)
+	plt.imshow(yos1_expanded1);
+	plt.title('1/8')
+	plt.subplot(713)
+	plt.imshow(yos1_expanded2);
+	plt.title('1/4')
+	plt.subplot(715)
+	plt.imshow(yos1_expanded3);
+	plt.title('1/2')
+	plt.subplot(717)
+	plt.imshow(yos1_expanded4);
+	plt.title('1')
+	plt.savefig('output/ps5-2-b-1.png')	
 	
 if __name__ == "__main__":
 	main()
