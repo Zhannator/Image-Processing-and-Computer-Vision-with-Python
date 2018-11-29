@@ -77,30 +77,54 @@ def normalize(img, distribute = True):
 		img = (img * (1/img.max()) * 255) # distribute values between 0 and 255
 	return img.astype('uint8')
 
+#################################################################################
+# Gaussian Reduce Function (downsamples image 2x)
+#################################################################################
 def reduce(img):
 	rows, columns = img.shape
 	# img must always have odd number of rows and columns
-	if rows % 2 == 0:
-		# Add last row to img_reduced
-		np.concatenate((img, np.array([img[rows - 1, :]])), axis = 0)
-	if columns % 2 == 0:
-		# Add last column to img_reduced
-		np.concatenate((img, np.reshape([img[:, columns - 1]], (rows, 1))), axis = 1)
 	img = cv2.GaussianBlur(img, (5, 5), 0)
 	img_reduced = img[::2, 1::2] # select all odd rows
+	rows_reduced, columns_reduced = img_reduced.shape
+	print "Reduced Shape: {}".format(img_reduced.shape)
 	
 	return img_reduced
 
-def expand(img):
+#################################################################################
+# Laplacian Expand Function (upsamples image 2x)
+#################################################################################
+def expand(img, shape):
 	rows, columns = img.shape
-	img_expanded = np.zeros((rows * 2 - 1, columns * 2 - 1)) # img must always have odd number of rows and columns
+	img_expanded = np.zeros((shape[0], shape[1])) # img must always have odd number of rows and columns
 	rows_expanded, columns_expanded = img_expanded.shape
 	for r in range(rows):
 		for c in range(columns):
 			img_expanded[r * 2, c * 2] = img[r, c]
 	img_expanded = cv2.GaussianBlur(img_expanded, (5, 5), 0)
-		
+	print "Expanded Shape: {}".format(img_expanded.shape)
+	
 	return img_expanded
+
+#################################################################################
+# 4-level Laplacian Pyramid 
+#################################################################################
+def laplacian_pyramid(img):
+	# Reduce images
+	img_reduced1 = reduce(img)
+	img_reduced2 = reduce(img_reduced1)
+	img_reduced3 = reduce(img_reduced2)
+	img_reduced4 = reduce(img_reduced3)
+	# Expand images
+	img_expanded1 = expand(img_reduced4, img_reduced3.shape)
+	img_expanded2 = expand(img_expanded1, img_reduced2.shape)
+	img_expanded3 = expand(img_expanded2, img_reduced1.shape)
+	# Calculate laplacian pyramid
+	gauss = img_reduced4
+	laplac1 = img_expanded1 - img_reduced3
+	laplac2 = img_expanded2 - img_reduced2
+	laplac3 = img_expanded3 - img_reduced1
+	
+	return gauss, laplac1, laplac2, laplac3
 	
 def main():
 	if False:
@@ -188,26 +212,27 @@ def main():
 	
 	# 2-B: Gaussian and Laplacian Pyramids - Expand
 	print "\n-----------------------2-B-----------------------"
-	# Reduce images
-	yos1_expanded1 = expand(yos1_reduced4)
-	yos1_expanded2 = expand(yos1_expanded1)
-	yos1_expanded3 = expand(yos1_expanded2)
-	yos1_expanded4 = expand(yos1_expanded3)
+	# Expand images
+	gauss, laplac1, laplac2, laplac3 = laplacian_pyramid(yos1)
 	# Save images
 	fig = plt.figure()
 	plt.subplot(711)
-	plt.imshow(yos1_expanded1);
-	plt.title('1/8')
+	plt.imshow(gauss);
+	plt.title('Gaussian')
 	plt.subplot(713)
-	plt.imshow(yos1_expanded2);
-	plt.title('1/4')
+	plt.imshow(laplac1);
+	plt.title('Laplacian 1')
 	plt.subplot(715)
-	plt.imshow(yos1_expanded3);
-	plt.title('1/2')
+	plt.imshow(laplac2);
+	plt.title('Laplacian 2')
 	plt.subplot(717)
-	plt.imshow(yos1_expanded4);
-	plt.title('1')
-	plt.savefig('output/ps5-2-b-1.png')	
+	plt.imshow(laplac3);
+	plt.title('Laplacian 3')
+	plt.savefig('output/ps5-2-b-1.png')
+	
+	# 3-A: Warping by flow
+	print "\n-----------------------3-A-----------------------"
+	
 	
 if __name__ == "__main__":
 	main()
