@@ -173,61 +173,60 @@ def reduce_warp_subtract(img1, img2, img3, filename_lk, filename_subtract, reduc
 	cv2.imwrite('output/' + filename_subtract, diff_images)
 	
 def main():
-	if False:
-		# 1-A: LK optic flow estimation
-		print "\n-----------------------1-A-----------------------" 
-		# Read images
-		shift0 = cv2.imread(os.path.join('input/TestSeq', 'Shift0.png'), 0)
-		shiftr2 = cv2.imread(os.path.join('input/TestSeq', 'ShiftR2.png'), 0)
-		shiftr5u5 = cv2.imread(os.path.join('input/TestSeq', 'ShiftR5U5.png'), 0)
-		shiftr10 = cv2.imread(os.path.join('input/TestSeq', 'ShiftR10.png'), 0)
-		shiftr20 = cv2.imread(os.path.join('input/TestSeq', 'ShiftR20.png'), 0)
-		shiftr40 = cv2.imread(os.path.join('input/TestSeq', 'ShiftR40.png'), 0)
-		# Smooth images
-		shift0 = cv2.GaussianBlur(shift0, (5, 5), 0)
-		shiftr2 = cv2.GaussianBlur(shiftr2, (5, 5), 0)
-		shiftr5u5 = cv2.GaussianBlur(shiftr5u5, (5, 5), 0)
-		shiftr10 = cv2.GaussianBlur(shiftr10, (5, 5), 0)
-		shiftr20 = cv2.GaussianBlur(shiftr20, (5, 5), 0)
-		shiftr40 = cv2.GaussianBlur(shiftr40, (5, 5), 0)
-		# Get image gradients
-		shift0_Ix, shift0_Iy = compute_gradient(shift0)
-		# Get image difference
-		shift0_shiftr2_It = shiftr2 - shift0
-		shift0_shiftr5u5_It = shiftr5u5 - shift0
-		# Calculate displacement images using LK optic flow estimation
-		shift0_shiftr2_u, shift0_shiftr2_v = lk_optic_flow(shift0_Ix, shift0_Iy, shift0_shiftr2_It)
-		shift0_shiftr5u5_u, shift0_shiftr5u5_v = lk_optic_flow(shift0_Ix, shift0_Iy, shift0_shiftr5u5_It)
-		# Save images
-		shift0_shiftr2 = cv2.hconcat([normalize(shift0_shiftr2_u, False), normalize(shift0_shiftr2_v, False)])
-		plt.imshow(shift0_shiftr2);
-		plt.colorbar()
-		plt.savefig('output/ps5-1-a-1.png')
-		shift0_shiftr5u5 = cv2.hconcat([normalize(shift0_shiftr5u5_u, False), normalize(shift0_shiftr5u5_v, False)])
-		plt.imshow(shift0_shiftr5u5);
-		plt.savefig('output/ps5-1-a-2.png')
-		
-		# 1-B: LK optic flow estimation
-		print "\n-----------------------1-B-----------------------" 
-		# Get image difference
-		shift0_shiftr10_It = shiftr10 - shift0
-		shift0_shiftr20_It = shiftr20 - shift0
-		shift0_shiftr40_It = shiftr40 - shift0
-		# Calculate displacement images using LK optic flow estimation
-		shift0_shiftr10_u, shift0_shiftr10_v = lk_optic_flow(shift0_Ix, shift0_Iy, shift0_shiftr10_It)
-		shift0_shiftr20_u, shift0_shiftr20_v = lk_optic_flow(shift0_Ix, shift0_Iy, shift0_shiftr20_It)
-		shift0_shiftr40_u, shift0_shiftr40_v = lk_optic_flow(shift0_Ix, shift0_Iy, shift0_shiftr40_It)
-		# Save images
-		shift0_shiftr10 = cv2.hconcat([normalize(shift0_shiftr10_u, False), normalize(shift0_shiftr10_v, False)])
-		plt.imshow(shift0_shiftr10);
-		plt.colorbar()
-		plt.savefig('output/ps5-1-b-1.png')
-		shift0_shiftr20 = cv2.hconcat([normalize(shift0_shiftr20_u, False), normalize(shift0_shiftr20_v, False)])
-		plt.imshow(shift0_shiftr20);
-		plt.savefig('output/ps5-1-b-2.png')
-		shift0_shiftr40 = cv2.hconcat([normalize(shift0_shiftr40_u, False), normalize(shift0_shiftr40_v, False)])
-		plt.imshow(shift0_shiftr40);
-		plt.savefig('output/ps5-1-b-3.png')
+	# 1-A: LK optic flow estimation
+	print "\n-----------------------1-A-----------------------" 
+	# Read images
+	shift0 = cv2.imread(os.path.join('input/TestSeq', 'Shift0.png'), 0)
+	shiftr2 = cv2.imread(os.path.join('input/TestSeq', 'ShiftR2.png'), 0)
+	shiftr5u5 = cv2.imread(os.path.join('input/TestSeq', 'ShiftR5U5.png'), 0)
+	shiftr10 = cv2.imread(os.path.join('input/TestSeq', 'ShiftR10.png'), 0)
+	shiftr20 = cv2.imread(os.path.join('input/TestSeq', 'ShiftR20.png'), 0)
+	shiftr40 = cv2.imread(os.path.join('input/TestSeq', 'ShiftR40.png'), 0)
+	# Smooth images
+	shift0 = cv2.GaussianBlur(shift0, (5, 5), 0)
+	shiftr2 = cv2.GaussianBlur(shiftr2, (5, 5), 0)
+	shiftr5u5 = cv2.GaussianBlur(shiftr5u5, (5, 5), 0)
+	shiftr10 = cv2.GaussianBlur(shiftr10, (5, 5), 0)
+	shiftr20 = cv2.GaussianBlur(shiftr20, (5, 5), 0)
+	shiftr40 = cv2.GaussianBlur(shiftr40, (5, 5), 0)
+	# Get image gradients
+	shift0_Ix, shift0_Iy = compute_gradient(shift0)
+	# Get image difference
+	shift0_shiftr2_It = shiftr2 - shift0
+	shift0_shiftr5u5_It = shiftr5u5 - shift0
+	# Calculate displacement images using LK optic flow estimation
+	shift0_shiftr2_u, shift0_shiftr2_v = lk_optic_flow(shift0_Ix, shift0_Iy, shift0_shiftr2_It)
+	shift0_shiftr5u5_u, shift0_shiftr5u5_v = lk_optic_flow(shift0_Ix, shift0_Iy, shift0_shiftr5u5_It)
+	# Save images
+	shift0_shiftr2 = cv2.hconcat([normalize(shift0_shiftr2_u, False), normalize(shift0_shiftr2_v, False)])
+	plt.imshow(shift0_shiftr2);
+	plt.colorbar()
+	plt.savefig('output/ps5-1-a-1.png')
+	shift0_shiftr5u5 = cv2.hconcat([normalize(shift0_shiftr5u5_u, False), normalize(shift0_shiftr5u5_v, False)])
+	plt.imshow(shift0_shiftr5u5);
+	plt.savefig('output/ps5-1-a-2.png')
+	
+	# 1-B: LK optic flow estimation
+	print "\n-----------------------1-B-----------------------" 
+	# Get image difference
+	shift0_shiftr10_It = shiftr10 - shift0
+	shift0_shiftr20_It = shiftr20 - shift0
+	shift0_shiftr40_It = shiftr40 - shift0
+	# Calculate displacement images using LK optic flow estimation
+	shift0_shiftr10_u, shift0_shiftr10_v = lk_optic_flow(shift0_Ix, shift0_Iy, shift0_shiftr10_It)
+	shift0_shiftr20_u, shift0_shiftr20_v = lk_optic_flow(shift0_Ix, shift0_Iy, shift0_shiftr20_It)
+	shift0_shiftr40_u, shift0_shiftr40_v = lk_optic_flow(shift0_Ix, shift0_Iy, shift0_shiftr40_It)
+	# Save images
+	shift0_shiftr10 = cv2.hconcat([normalize(shift0_shiftr10_u, False), normalize(shift0_shiftr10_v, False)])
+	plt.imshow(shift0_shiftr10);
+	plt.colorbar()
+	plt.savefig('output/ps5-1-b-1.png')
+	shift0_shiftr20 = cv2.hconcat([normalize(shift0_shiftr20_u, False), normalize(shift0_shiftr20_v, False)])
+	plt.imshow(shift0_shiftr20);
+	plt.savefig('output/ps5-1-b-2.png')
+	shift0_shiftr40 = cv2.hconcat([normalize(shift0_shiftr40_u, False), normalize(shift0_shiftr40_v, False)])
+	plt.imshow(shift0_shiftr40);
+	plt.savefig('output/ps5-1-b-3.png')
 	
 	# 2-A: Gaussian and Laplacian Pyramids - Reduce
 	print "\n-----------------------2-A-----------------------" 
