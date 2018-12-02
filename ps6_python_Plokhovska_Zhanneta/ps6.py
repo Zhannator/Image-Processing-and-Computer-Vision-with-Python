@@ -28,7 +28,7 @@ def pca_analysis(T):
 	#print "\nA Shape: {}\n".format(A.shape)
 	
 	# Calculate convergence matrix
-	#C = np.matmul(A, np.transpose(A))
+	C = np.matmul(A, np.transpose(A))
 	
 	# Calculate convergence matrix
 	AtA = np.matmul(np.transpose(A), A)
@@ -46,7 +46,7 @@ def pca_analysis(T):
 	# Calculate U (most important eigenvectors from AAt) by multiplying A and V (only most important eigenvectors)
 	U = np.matmul(A, eigenfaces)
 	
-	return eigenvalues, U, AtA
+	return eigenvalues, U, C
 
 ################################################################################
 # Extract and return features from each image in images (a.k.a. Projection)
