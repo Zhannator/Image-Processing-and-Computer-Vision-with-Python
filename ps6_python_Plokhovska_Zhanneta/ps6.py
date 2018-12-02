@@ -5,35 +5,19 @@ import numpy as np
 import math
 import random
 import itertools
+import matplotlib.pyplot as plt
 from sklearn.neighbors import KNeighborsClassifier
-
-################################################################################
-# Main pca function
-################################################################################
-def pca(img_training, img_testing):
-	# Feature extraction using PCA
-	eigenvalues, eigenfaces = pca_analysis(np.transpose(img_training))
-	
-
-	
-	W_training = pca_extract_features(U, img_training, m)	
-	W_testing = pca_extract_features(U, img_testing, m)
-
-	# Normalize data
-	W_training = pca_normalize(W_training)	
-	W_testing = pca_normalize(W_testing)
-	
-	return W_training, W_testing
 
 ################################################################################
 # Calculate eigenfaces and their according eigenvalues
 ################################################################################
 def pca_analysis(T):
 	# Calculate mean face
-	m = (T.mean(1))[0]
+	m = (T.mean(1))
+	print m.shape
 	
 	# Subtract mean from each column vector in (a.k.a. center images)
-	A = T - m
+	A = np.transpose(np.transpose(T) - m)
 	
 	#print "\nA Shape: {}\n".format(A.shape)
 	
@@ -64,6 +48,7 @@ def pca_analysis(T):
 def pca_extract_features(U, images, m):
 	U_T = np.transpose(U)
 	W_training = []
+	images = np.transpose(images)
 	num_images = len(images)
 	images_unique = images - m
 	for i in range(num_images):
@@ -87,11 +72,16 @@ def pca_normalize(data):
 def reduce_number_of_eigenvectors(eigenvalues_training, min_variance):
 	eigenvalues_training_len = len(eigenvalues_training)
 	eigenvalues_training_sum = np.sum(eigenvalues_training)
+	k_min_variance = 0
+	v_list = np.zeros(eigenvalues_training_len)
 	for k in range(eigenvalues_training_len):
 		v = np.sum(eigenvalues_training[0:k]) / eigenvalues_training_sum
-		if v >= min_variance:
-			return k + 1 # Add one because k count starts at 0
-
+		v_list[k] = v
+	
+	for k in range(eigenvalues_training_len):
+		if v_list[k] >= min_variance:
+			return (k + 1), v_list # Add one because k count starts at 0
+			
 #################################################################################
 # Normalize image for display
 #################################################################################
@@ -117,7 +107,12 @@ def main():
 
 	# 1-A: Training images
 	print "\n-----------------------1-A-----------------------" 
+	# Training images
 	training_images = np.zeros((training_images_total, num_of_pixels)) # training images, each as row vector
+	training_classes = np.zeros(training_images_total) # training classes
+	# Testing images
+	testing_images = np.zeros((testing_images_total, num_of_pixels)) # testing images, each as row vector
+	testing_classes = np.zeros(testing_images_total) # testing classes
 	# Read in training images
 	counter = 0
 	for i in range(1, training_images_total + 1, 1):
@@ -125,18 +120,31 @@ def main():
 		img = cv2.imread(training_folder + str(i) + ".pgm", 0) * (1.0 / 255.0)
 		# 2D image matrix to 1D row vector
 		training_images[counter] = (img).flatten()
+		training_classes[counter] = int(counter / training_images_per_class) + 1
 		counter = counter + 1	
+	# Read in testing images
+	counter = 0
+	for i in range(1, num_of_people + 1, 1):
+		for j in range(1, testing_images_per_class + 1, 1):
+			# Read image
+			img = cv2.imread(testing_folder + 's' + str(i) + '/' + str(j) + '.pgm', 0) * (1.0 / 255.0)
+			# 2D image matrix to 1D row vector
+			testing_images[counter] = (img).flatten()
+			testing_classes[counter] = i
+			counter = counter + 1
 	# Row to column images
 	T =  np.transpose(training_images)
+	T_testing = np.transpose(testing_images)
 	cv2.imwrite('output/ps6-1-a.png', normalize_for_display(T))
 	# Convert images to type double
 	T = T.astype(np.double)
+	T_testing = T_testing.astype(np.double)
 	
 	# 1-B: Average face
 	print "\n-----------------------1-B-----------------------" 
 	# Calculate mean face
-	m = np.reshape((T.mean(1)), (img_height, img_width))
-	cv2.imwrite('output/ps6-1-b.png', normalize_for_display(m))
+	m = T.mean(1)
+	cv2.imwrite('output/ps6-1-b.png', normalize_for_display(np.reshape(m, (img_height, img_width))))
 	
 	# 1-C: PCA analysis
 	print "\n-----------------------1-C-----------------------" 
@@ -152,51 +160,52 @@ def main():
 	# 1-D: Capture 95% of variance
 	print "\n-----------------------1-D-----------------------" 
 	# Decide how many eigenfaces are enough to represent variance in our training set - at least 95 % variance
-	k = reduce_number_of_eigenvectors(eigenvalues, 0.95)
+	k, v_list = reduce_number_of_eigenvectors(eigenvalues, 0.95)
+	print "\nk = {}\n".format(k)
+	# Plot v_list vs k
+	plt.plot(range(1, len(v_list) + 1, 1), v_list)
+	plt.xlabel('k')
+	plt.ylabel('v(k)')
+	#plt.show()
+	plt.savefig('output/ps6-1-d-1.png')
 	# Dominant eigenvectors
-	V = eigenfaces[:, 0 : k]
+	U = eigenfaces[:, 0 : k]
 	
-	'''
-	# Feature extraction using pca
-	W_training, W_testing = pca(img_training, img_testing)
-	'''
+	# 2-A: Feature extraction -training
+	print "\n-----------------------2-A-----------------------" 
+	W_training = pca_extract_features(U, T, m)
+	# Normalize data
+	W_training = pca_normalize(W_training)	
+	print "\n W training dimensions: {}".format(W_training.shape)
+
+	# 2-B: Feature extraction - testing
+	print "\n-----------------------2-B-----------------------" 
+	W_testing = pca_extract_features(U, T_testing, m)
+	print "\n W testing dimensions: {}".format(W_testing.shape)
+	# Normalize data	
+	W_testing = pca_normalize(W_testing)
 	
-	'''
-	# Testing images
-	testing_images = np.zeros((testing_images_total, num_of_pixels)) # testing images, each as row vector
-	testing_classes = np.zeros(testing_images_total) # testing classes
-	
-	# Read in testing images
-	counter = 0
-	for i in range(1, num_of_people + 1, 1):
-		for j in range(1, testing_images_per_class + 1, 1):
-			# Read image
-			img = cv2.imread(testing_folder + 's' + str(i) + '/' + str(j) + '.pgm', 0) * (1.0 / 255.0)
-			# 2D image matrix to 1D row vector
-			testing_images[counter] = (img).flatten()
-			counter = counter + 1
-			
-	# Convert images to type double
-	testing_images = testing_images.astype(np.double)
-	'''
-	
-	'''# 1
-	# Test to compare accuracy to sklearn algorithm
-	knn = KNeighborsClassifier(n_neighbors = 1)
-	knn.fit(W_training, classes_training)
-	pred = knn.predict(W_testing)
-	rows_testing, cols_testing = W_testing.shape
-	total_correct = 0.0
-	total_incorrect = 0.0	
-	for r in range(rows_testing):
-		# Check if the classification is correct
-		if pred[r] == classes_testing[r]:
-			total_correct = total_correct + 1.0
-		else:
-			total_incorrect = total_incorrect + 1.0
-	accuracy = ((total_correct / (total_correct + total_incorrect)) * 100) # Accuracy
-	print "\nAccuracy (sklearn): {}%.\n".format(accuracy)
-	'''
+	# 3-A: KNN
+	print "\n-----------------------3-A-----------------------" 
+	num_of_neighbors = np.array([1, 3, 5, 7, 9, 11])
+	accuracies = np.zeros(len(num_of_neighbors))
+	# Test for accuracy using sklearn algorithm
+	for i in range(len(num_of_neighbors)):
+		knn = KNeighborsClassifier(n_neighbors = num_of_neighbors[i])
+		knn.fit(W_training, training_classes)
+		pred = knn.predict(W_testing)
+		rows_testing, cols_testing = W_testing.shape
+		total_correct = 0.0
+		total_incorrect = 0.0	
+		for r in range(rows_testing):
+			# Check if the classification is correct
+			if pred[r] == testing_classes[r]:
+				total_correct = total_correct + 1.0
+			else:
+				total_incorrect = total_incorrect + 1.0
+		accuracies[i] = ((total_correct / (total_correct + total_incorrect)) * 100) # Accuracy
+	print "\nNumber of neighbors (k): {}\n".format(num_of_neighbors)
+	print "\nAccuracies: {}\n".format(accuracies)
 	
 if __name__ == "__main__":
 	main()
