@@ -6,7 +6,14 @@ import math
 import random
 import itertools
 import matplotlib.pyplot as plt
+import warnings
+# knn
 from sklearn.neighbors import KNeighborsClassifier
+# svm
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
+from sklearn.svm import SVC
 
 ################################################################################
 # Calculate eigenfaces and their according eigenvalues
@@ -14,7 +21,6 @@ from sklearn.neighbors import KNeighborsClassifier
 def pca_analysis(T):
 	# Calculate mean face
 	m = (T.mean(1))
-	print m.shape
 	
 	# Subtract mean from each column vector in (a.k.a. center images)
 	A = np.transpose(np.transpose(T) - m)
@@ -90,7 +96,19 @@ def normalize_for_display(img, distribute = True):
 	if distribute == True:
 		img = (img * (1/img.max()) * 255) # distribute values between 0 and 255
 	return img.astype('uint8')
-			
+
+def test_accuracy(predicted_classes, testing_classes):
+	total_correct = 0.0
+	total_incorrect = 0.0	
+	for r in range(len(predicted_classes)):
+		# Check if the classification is correct
+		if predicted_classes[r] == testing_classes[r]:
+			total_correct = total_correct + 1.0
+		else:
+			total_incorrect = total_incorrect + 1.0
+	accuracy = ((total_correct / (total_correct + total_incorrect)) * 100) # Accuracy
+	return accuracy
+	
 def main():
 	# Helpful constants
 	img_height = 112
@@ -193,19 +211,30 @@ def main():
 	for i in range(len(num_of_neighbors)):
 		knn = KNeighborsClassifier(n_neighbors = num_of_neighbors[i])
 		knn.fit(W_training, training_classes)
-		pred = knn.predict(W_testing)
-		rows_testing, cols_testing = W_testing.shape
-		total_correct = 0.0
-		total_incorrect = 0.0	
-		for r in range(rows_testing):
-			# Check if the classification is correct
-			if pred[r] == testing_classes[r]:
-				total_correct = total_correct + 1.0
-			else:
-				total_incorrect = total_incorrect + 1.0
-		accuracies[i] = ((total_correct / (total_correct + total_incorrect)) * 100) # Accuracy
-	print "\nNumber of neighbors (k): {}\n".format(num_of_neighbors)
+		predicted_classes = knn.predict(W_testing)
+		accuracies[i] = test_accuracy(predicted_classes, testing_classes)
+	print "\nNumber of Neighbors (k): {}\n".format(num_of_neighbors)
 	print "\nAccuracies: {}\n".format(accuracies)
 	
+	# 3-B: SVM
+	print "\n-----------------------3-B-----------------------"
+	svm_kernels = np.array(['linear', 'poly', 'rbf'])
+	accuracies = np.zeros(len(svm_kernels))
+	# Test for accuracy using sklearn algorithm
+	for i in range(len(svm_kernels)):
+		param_grid = {'C': [1e3, 5e3, 1e4, 5e4, 1e5], 'gamma': [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.1], }
+		if svm_kernels[i] == 'poly':
+			clf = GridSearchCV(SVC(kernel = svm_kernels[i], degree = 3, class_weight = 'balanced'), param_grid)
+		else:
+			clf = GridSearchCV(SVC(kernel = svm_kernels[i], class_weight = 'balanced'), param_grid)
+		clf = clf.fit(W_training, training_classes)
+		predicted_classes = clf.predict(W_testing)
+		accuracies[i] = test_accuracy(predicted_classes, testing_classes)
+	print "\nSVM Kernels: {}\n".format(svm_kernels)
+	print "\nAccuracies: {}\n".format(accuracies)	
+	
+	
 if __name__ == "__main__":
+	# Ignore Python warnings
+	warnings.filterwarnings("ignore")
 	main()
