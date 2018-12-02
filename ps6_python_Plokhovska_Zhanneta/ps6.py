@@ -233,7 +233,6 @@ def main():
 	print "\nSVM Kernels: {}\n".format(svm_kernels)
 	print "\nAccuracies: {}\n".format(accuracies)	
 	
-	
 if __name__ == "__main__":
 	# Ignore Python warnings
 	warnings.filterwarnings("ignore")
